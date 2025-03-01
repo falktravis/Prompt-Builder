@@ -1,6 +1,8 @@
 # Prompt Builder 🧩
 The Modular Prompting Tool - Drag, drop, and assemble reusable prompt components to streamline your workflow!
 
+![Demo Video](Demo.gif)
+
 ## Install the Chrome Extension 🛠️
 1. Clone this Repository or Directly download the _dist_ folder
 2. Open Chrome and navigate to chrome://extensions.
@@ -10,19 +12,19 @@ The Modular Prompting Tool - Drag, drop, and assemble reusable prompt components
 The Prompt Builder icon will appear in your extensions bar! Click the icon to open the prompt builder in a new tab! Pin it for easy access.
 
 ## Contribute to Prompt Builder 🤝
-We welcome contributions! Please read our CONTRIBUTING.md for guidelines on:
+We welcome contributions! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
 
-Setting up the development environment (Vite/React/TypeScript).
+- Setting up the development environment (Vite/React/TypeScript).
 
-Submitting pull requests.
+- Submitting pull requests.
 
-Reporting bugs or suggesting features.
+- Reporting bugs or suggesting features.
 
 ## Feature Ideas 💡
 Here are some potential enhancements for the project:
 - Streamline completed prompt saving and downloading
-- Styles and User Experience centered design
-- 
+- Styles and User Experience Centered Design
+- Compiled Prompt Libraries
 
 ## Built With 🔧
 Frontend: Vite, React, TypeScript, SCSS
