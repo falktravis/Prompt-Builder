@@ -26,6 +26,10 @@ Here are some potential enhancements for the project:
 - Styles and User Experience Centered Design
 - Compiled Prompt Libraries
 
+### Bugs
+Currently known bugs which need fixing:
+- Prompt page, jumping to top on adding section or clicking textarea
+
 ## Built With 🔧
 Frontend: Vite, React, TypeScript, SCSS
 

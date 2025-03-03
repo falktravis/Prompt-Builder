@@ -1,24 +1,20 @@
 /**
  * App.tsx
  *
- * This file implements a Prompt Builder for a legal analytics service.
- * The application lets users organize “components” (which can be linked to public legal data)
- * into folders and then build “prompts” by dragging and dropping those components into a prompt editor.
- * The service is designed to eventually support analytics on criminal defense cases, profiling judges and
- * prosecutors (starting in Massachusetts).
+ * This file implements a Prompt Builder application.
+ * It allows users to organize “components” (legal or prompt blocks)
+ * into folders, then build “prompts” by dragging and dropping those components.
+ * The app supports operations such as file load/save (JSON), modal editing,
+ * folder management, and drag–drop reordering.
  *
- * The file includes:
- *   - Type definitions for components, folders, tree nodes, sections, and prompts.
- *   - Initial data for the folder tree and new prompts.
- *   - A Sidebar component that handles the folder/component tree with drag–drop,
- *     file load/save (JSON), modal editing, and folder management.
- *   - The main App component which manages prompt tabs and a prompt editor for composing content.
+ * Refactored for improved modularity, readability, error handling, and efficiency.
  */
 
 import React, {
   useState,
   useRef,
   useEffect,
+  useLayoutEffect,
   KeyboardEvent,
   ChangeEvent,
   JSX,
@@ -39,7 +35,6 @@ import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 
 // ----- TYPE DEFINITIONS -----
-// Represents a component item in the tree (e.g., a legal data component)
 export type ComponentType = {
   id: number;
   name: string;
@@ -48,7 +43,6 @@ export type ComponentType = {
   componentType: "context" | "main" | "instruction";
 };
 
-// Represents a folder that can contain sub-folders or components.
 export type FolderType = {
   id: number;
   name: string;
@@ -56,10 +50,8 @@ export type FolderType = {
   children: (FolderType | ComponentType)[];
 };
 
-// A TreeNode can be either a Folder or a Component.
 export type TreeNode = FolderType | ComponentType;
 
-// Represents a section within a prompt (each section may be linked to a component)
 export type Section = {
   id: number;
   name: string;
@@ -74,7 +66,6 @@ export type Section = {
   editingHeaderTempType?: "context" | "main" | "instruction";
 };
 
-// Represents a complete prompt with multiple sections.
 export type Prompt = {
   id: number;
   num: number;
@@ -82,10 +73,9 @@ export type Prompt = {
   sections: Section[];
 };
 
-// ----- INITIAL DATA -----
-/** 
- * The base folder is initialized with an empty "Components" folder.
- */
+// ----- CONSTANTS & INITIAL DATA -----
+const INDENT = 20;
+
 const initialTreeData: FolderType[] = [
   {
     id: 1,
@@ -95,9 +85,6 @@ const initialTreeData: FolderType[] = [
   },
 ];
 
-/**
- * Initial section used when creating a new prompt.
- */
 const initialSections: Section[] = [
   {
     id: Date.now(),
@@ -110,28 +97,35 @@ const initialSections: Section[] = [
   },
 ];
 
-// Constant for indent threshold (used for drop indicator offsets)
-const INDENT = 20;
-
-// ----- HELPER FUNCTIONS (PURE UTILS) -----
+// ----- UTILITY FUNCTIONS ----- //
 
 /**
- * Parses loaded JSON data from file input or drop.
- * Returns an array of FolderType or ComponentType items.
+ * Parses loaded JSON data from a file.
+ * @param data The parsed JSON data.
+ * @returns An array of FolderType or ComponentType.
  */
 const parseLoadedData = (data: any): (FolderType | ComponentType)[] => {
-  let newChildren: (FolderType | ComponentType)[] = [];
-  if (Array.isArray(data)) {
-    newChildren = data;
-  } else if (data.type === "folder" && data.children) {
-    newChildren = data.children;
+  try {
+    let newChildren: (FolderType | ComponentType)[] = [];
+    if (Array.isArray(data)) {
+      newChildren = data;
+    } else if (data.type === "folder" && data.children) {
+      newChildren = data.children;
+    }
+    console.assert(newChildren.length > 0, "Parsed data is empty");
+    return newChildren;
+  } catch (error) {
+    console.error("Error parsing loaded data:", error);
+    return [];
   }
-  console.assert(newChildren.length > 0, "Parsed data is empty");
-  return newChildren;
 };
 
 /**
- * Recursively updates the folder with a given folderId using the updater callback.
+ * Recursively updates a folder in the tree using an updater function.
+ * @param nodes The current folder tree.
+ * @param folderId The target folder id.
+ * @param updater Callback to update the folder.
+ * @returns A new updated folder tree.
  */
 const updateFolderInTree = (
   nodes: FolderType[],
@@ -149,15 +143,230 @@ const updateFolderInTree = (
   });
 };
 
-// ----- SIDEBAR COMPONENT -----
-// Manages the tree of folders and components including drag–drop, JSON file load/save, and modals.
+/**
+ * Loads a JSON file and invokes a callback with parsed children.
+ * @param file The JSON file.
+ * @param onSuccess Callback with parsed children.
+ */
+const loadJSONFile = (file: File, onSuccess: (children: (FolderType | ComponentType)[]) => void) => {
+  if (file.type !== "application/json") {
+    console.error("Unsupported file type. Please select a JSON file.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const data = JSON.parse(event.target?.result as string);
+      const newChildren = parseLoadedData(data);
+      onSuccess(newChildren);
+      console.log("JSON file loaded successfully.");
+    } catch (err) {
+      console.error("Error parsing JSON file:", err);
+    }
+  };
+  reader.readAsText(file);
+};
+
+/**
+ * Recursively inserts a node into the tree at a specified target and position.
+ */
+const insertNode = (
+  nodes: TreeNode[],
+  targetId: number,
+  nodeToInsert: TreeNode,
+  position: "above" | "below" | "inside" | "inside-bottom"
+): TreeNode[] => {
+  const newNodes: TreeNode[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (node.id === targetId) {
+      if (position === "above") {
+        newNodes.push(nodeToInsert);
+        newNodes.push(node);
+      } else if (position === "below") {
+        newNodes.push(node);
+        newNodes.push(nodeToInsert);
+      } else if (position === "inside") {
+        if (node.type === "folder") {
+          node.children = [nodeToInsert, ...node.children];
+        }
+        newNodes.push(node);
+      } else if (position === "inside-bottom") {
+        if (node.type === "folder") {
+          node.children = [...node.children, nodeToInsert];
+        }
+        newNodes.push(node);
+      } else {
+        newNodes.push(node);
+      }
+    } else if (node.type === "folder") {
+      node.children = insertNode(node.children, targetId, nodeToInsert, position);
+      newNodes.push(node);
+    } else {
+      newNodes.push(node);
+    }
+  }
+  return newNodes;
+};
+
+/**
+ * Recursively removes a node from the tree.
+ * @param nodes The tree nodes.
+ * @param id The id of the node to remove.
+ * @returns The new tree and the removed node (if any).
+ */
+const removeNode = (
+  nodes: TreeNode[],
+  id: number
+): { newNodes: TreeNode[]; removed: TreeNode | null } => {
+  let removed: TreeNode | null = null;
+  const filtered = nodes.filter((node) => {
+    if (node.id === id) {
+      removed = node;
+      return false;
+    }
+    if (node.type === "folder") {
+      const result = removeNode(node.children, id);
+      if (result.removed) {
+        removed = result.removed;
+        node.children = result.newNodes;
+      }
+    }
+    return true;
+  });
+  return { newNodes: filtered, removed };
+};
+
+/**
+ * Checks whether the child node is a descendant of the parent node.
+ */
+const isDescendant = (parent: TreeNode, child: TreeNode): boolean => {
+  if (parent.type !== "folder") return false;
+  for (const node of parent.children) {
+    if (node.id === child.id) return true;
+    if (node.type === "folder" && isDescendant(node, child)) return true;
+  }
+  return false;
+};
+
+/**
+ * Moves a dragged node relative to a target node.
+ * @param treeData The current tree.
+ * @param dragged The dragged node.
+ * @param target The target node.
+ * @param position The relative position.
+ * @returns The new tree after moving the node.
+ */
+const moveNodeInTree = (
+  treeData: TreeNode[],
+  dragged: TreeNode,
+  target: TreeNode,
+  position: "above" | "below" | "inside" | "inside-bottom"
+): TreeNode[] => {
+  if (dragged.id === target.id || (dragged.type === "folder" && isDescendant(dragged, target))) {
+    console.warn("Invalid move: Cannot move a node into itself or its descendant.");
+    return treeData;
+  }
+  let newTree = [...treeData];
+  const removalResult = removeNode(newTree, dragged.id);
+  newTree = removalResult.newNodes;
+  newTree = insertNode(newTree, target.id, dragged, position);
+  console.log(`Moved node ${dragged.id} to ${position} of node ${target.id}`);
+  return newTree;
+};
+
+// ----- SIDEBAR COMPONENT & ITS HELPER FUNCTIONS ----- //
+
 type SidebarProps = {
   treeData: FolderType[];
   setTreeData: React.Dispatch<React.SetStateAction<FolderType[]>>;
 };
 
+/**
+ * Renders a modal dialog for adding or editing a component.
+ */
+const ModalDialog: React.FC<{
+  modalMode: "add" | "edit" | null;
+  modalName: string;
+  modalType: "context" | "main" | "instruction";
+  modalContent: string;
+  setModalName: (name: string) => void;
+  setModalType: (type: "context" | "main" | "instruction") => void;
+  setModalContent: (content: string) => void;
+  submitModal: () => void;
+  closeModal: () => void;
+}> = ({
+  modalMode,
+  modalName,
+  modalType,
+  modalContent,
+  setModalName,
+  setModalType,
+  setModalContent,
+  submitModal,
+  closeModal,
+}) => {
+  return (
+    <div
+      className="modal-overlay"
+      onClick={(e) => {
+        if ((e.target as HTMLElement).classList.contains("modal-overlay")) closeModal();
+      }}
+    >
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={closeModal}>
+          <CloseIcon fontSize="inherit" />
+        </button>
+        <h3>{modalMode === "add" ? "Add Component" : "Edit Component"}</h3>
+        <label>
+          Name:
+          <input
+            type="text"
+            autoFocus
+            value={modalName}
+            onChange={(e) => setModalName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                submitModal();
+              }
+            }}
+          />
+        </label>
+        <label>
+          Type:
+          <select
+            value={modalType}
+            onChange={(e) =>
+              setModalType(e.target.value as "context" | "main" | "instruction")
+            }
+          >
+            <option value="context">context</option>
+            <option value="main">main</option>
+            <option value="instruction">instruction</option>
+          </select>
+        </label>
+        <label style={{ flexGrow: 1 }}>
+          Content:
+          <textarea
+            value={modalContent}
+            onChange={(e) => setModalContent(e.target.value)}
+          ></textarea>
+        </label>
+        <button className="modal-submit" onClick={submitModal}>
+          {modalMode === "add" ? "Create" : "Confirm"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Sidebar component that manages folder/component tree, file load/save,
+ * modal editing, and folder management.
+ */
 const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
-  // ----- STATE VARIABLES FOR UI INTERACTIONS -----
+  // ----- STATE VARIABLES -----
   const [collapsed, setCollapsed] = useState<{ [key: number]: boolean }>({});
   const [editingFolderId, setEditingFolderId] = useState<number | null>(null);
   const [newFolderName, setNewFolderName] = useState<string>("");
@@ -182,7 +391,7 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
     targetIndex?: number;
   } | null>(null);
 
-  // File input ref for load JSON.
+  // File input ref for loading JSON.
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ----- EFFECTS -----
@@ -194,90 +403,58 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
     return () => document.removeEventListener("click", handleDocumentClick);
   }, []);
 
-  // Initialize collapsed state for folders (except the base folder).
+  // Initialize collapse state for folders (except base folder).
   useEffect(() => {
-    const initializeCollapsedState = (nodes: TreeNode[], collapsedState: { [key: number]: boolean } = {}) => {
+    const initializeCollapsedState = (
+      nodes: TreeNode[],
+      state: { [key: number]: boolean } = {}
+    ) => {
       nodes.forEach((node) => {
         if (node.type === "folder" && node.id !== 1) {
-          collapsedState[node.id] = true;
+          state[node.id] = true;
         }
         if (node.type === "folder" && node.children) {
-          initializeCollapsedState(node.children, collapsedState);
+          initializeCollapsedState(node.children, state);
         }
       });
-      return collapsedState;
+      return state;
     };
     setCollapsed(initializeCollapsedState(treeData));
   }, [treeData]);
 
-  // ----- FILE LOAD / SAVE FUNCTIONS -----
+  // ----- FILE LOAD / SAVE HANDLERS -----
 
-  /**
-   * Handles file input changes (loading a JSON file) and updates the tree data.
-   */
   const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type === "application/json") {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const data = JSON.parse(event.target?.result as string);
-          const newChildren = parseLoadedData(data);
-          // Append new children to the base folder (id: 1)
-          setTreeData((prev) =>
-            prev.map((node) =>
-              node.id === 1 && node.type === "folder"
-                ? { ...node, children: [...node.children, ...newChildren] }
-                : node
-            )
-          );
-          console.log("JSON file loaded successfully.");
-        } catch (err) {
-          console.error("Error parsing JSON file", err);
-        }
-      };
-      reader.readAsText(file);
-    } else {
-      console.error("Unsupported file type. Please select a JSON file.");
+    if (file) {
+      loadJSONFile(file, (newChildren) => {
+        setTreeData((prev) =>
+          prev.map((node) =>
+            node.id === 1 && node.type === "folder"
+              ? { ...node, children: [...node.children, ...newChildren] }
+              : node
+          )
+        );
+      });
     }
   };
 
-  /**
-   * Handles file drop events (drag–drop a JSON file) and updates the tree data.
-   */
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      const file = files[0];
-      if (file.type === "application/json") {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const data = JSON.parse(event.target?.result as string);
-            const newChildren = parseLoadedData(data);
-            setTreeData((prev) =>
-              prev.map((node) =>
-                node.id === 1 && node.type === "folder"
-                  ? { ...node, children: [...node.children, ...newChildren] }
-                  : node
-              )
-            );
-            console.log("JSON file dropped and loaded successfully.");
-          } catch (err) {
-            console.error("Error parsing dropped JSON file", err);
-          }
-        };
-        reader.readAsText(file);
-      } else {
-        console.error("Dropped file is not a JSON file.");
-      }
+      loadJSONFile(files[0], (newChildren) => {
+        setTreeData((prev) =>
+          prev.map((node) =>
+            node.id === 1 && node.type === "folder"
+              ? { ...node, children: [...node.children, ...newChildren] }
+              : node
+          )
+        );
+      });
     }
   };
 
-  /**
-   * Saves the base folder (id: 1) to a JSON file and triggers a download.
-   */
   const handleSaveJSON = () => {
     const baseFolder = treeData.find((node) => node.id === 1 && node.type === "folder");
     if (baseFolder) {
@@ -296,11 +473,8 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
     }
   };
 
-  // ----- MODAL FUNCTIONS -----
+  // ----- MODAL HANDLERS -----
 
-  /**
-   * Opens the modal for adding a new component to the specified folder.
-   */
   const openAddComponentModal = (folderId: number) => {
     setModalMode("add");
     setModalFolderId(folderId);
@@ -310,9 +484,6 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
     setModalOpen(true);
   };
 
-  /**
-   * Opens the modal for editing an existing component.
-   */
   const openEditComponentModal = (comp: ComponentType) => {
     setModalMode("edit");
     setModalComponent(comp);
@@ -322,9 +493,6 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
     setModalOpen(true);
   };
 
-  /**
-   * Closes the modal and resets modal-related state.
-   */
   const closeModal = () => {
     setModalOpen(false);
     setModalMode(null);
@@ -332,10 +500,6 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
     setModalComponent(null);
   };
 
-  /**
-   * Submits the modal form (either adding a new component or editing an existing one)
-   * and updates the tree data accordingly.
-   */
   const submitModal = () => {
     if (modalMode === "add" && modalFolderId !== null) {
       const newComp: ComponentType = {
@@ -345,19 +509,19 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
         content: modalContent,
         componentType: modalType,
       };
-      // Recursively add the new component to the designated folder.
-      const addComponent = (nodes: FolderType[]): FolderType[] => {
+      // Recursive helper to add component into target folder.
+      const addComponentToTree = (nodes: FolderType[]): FolderType[] => {
         return nodes.map((node) => {
           if (node.id === modalFolderId && node.type === "folder") {
             return { ...node, children: [...node.children, newComp] };
           }
           if (node.children) {
-            return { ...node, children: addComponent(node.children as FolderType[]) };
+            return { ...node, children: addComponentToTree(node.children as FolderType[]) };
           }
           return node;
         });
       };
-      setTreeData(addComponent(treeData));
+      setTreeData(addComponentToTree(treeData));
       console.log("Component added:", newComp);
     } else if (modalMode === "edit" && modalComponent) {
       const updatedComp: ComponentType = {
@@ -366,42 +530,34 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
         content: modalContent,
         componentType: modalType,
       };
-      // Recursively update the matching component in the tree.
-      const updateComponent = (nodes: TreeNode[]): TreeNode[] => {
+      // Recursive helper to update component.
+      const updateComponentInTree = (nodes: TreeNode[]): TreeNode[] => {
         return nodes.map((node) => {
           if (node.type === "component" && node.id === updatedComp.id) {
             return updatedComp;
           } else if (node.type === "folder" && node.children) {
-            return { ...node, children: updateComponent(node.children) };
+            return { ...node, children: updateComponentInTree(node.children) };
           }
           return node;
         });
       };
-      setTreeData(updateComponent(treeData) as FolderType[]);
+      setTreeData(updateComponentInTree(treeData) as FolderType[]);
       console.log("Component updated:", updatedComp);
     }
     closeModal();
   };
 
-  // ----- FOLDER MANAGEMENT FUNCTIONS -----
+  // ----- FOLDER MANAGEMENT HANDLERS -----
 
-  /**
-   * Toggles the collapse state for a given folder.
-   */
-  const toggleCollapse = (id: number) =>
+  const toggleCollapse = (id: number) => {
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
-  /**
-   * Initiates folder editing (to add a sub-folder).
-   */
   const startEditing = (parentId: number) => {
     setEditingFolderId(parentId);
     setNewFolderName("");
   };
 
-  /**
-   * Saves a new folder under the folder with the specified parentId.
-   */
   const saveFolder = (parentId: number) => {
     if (!newFolderName.trim()) return;
     const newFolder: FolderType = {
@@ -410,7 +566,6 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
       type: "folder",
       children: [],
     };
-    // Use helper to update the folder tree recursively.
     const updatedTree = updateFolderInTree(treeData, parentId, (folder) => ({
       ...folder,
       children: [...folder.children, newFolder],
@@ -422,24 +577,18 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
     console.log("Folder created:", newFolder);
   };
 
-  /**
-   * Cancels folder editing.
-   */
   const cancelEditing = () => {
     setEditingFolderId(null);
     setNewFolderName("");
   };
 
-  /**
-   * Deletes a folder (except the base folder) from the tree.
-   */
   const deleteFolder = (folderId: number) => {
     if (folderId === 1) return;
-    const removeFolderFromNodes = (nodes: TreeNode[]): TreeNode[] => {
+    const removeFolder = (nodes: TreeNode[]): TreeNode[] => {
       return nodes.reduce<TreeNode[]>((acc, node) => {
         if (node.type === "folder") {
           if (node.id === folderId) return acc;
-          const updatedChildren = removeFolderFromNodes(node.children);
+          const updatedChildren = removeFolder(node.children);
           acc.push({ ...node, children: updatedChildren });
         } else {
           acc.push(node);
@@ -447,148 +596,45 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
         return acc;
       }, []);
     };
-    const newData = removeFolderFromNodes(treeData);
+    const newData = removeFolder(treeData);
     setTreeData(newData as FolderType[]);
     console.log("Folder deleted, id:", folderId);
   };
 
-  /**
-   * Deletes a component from the tree.
-   */
   const deleteComponent = (componentId: number) => {
-    const removeComponentFromNodes = (nodes: TreeNode[]): TreeNode[] => {
+    const removeComponent = (nodes: TreeNode[]): TreeNode[] => {
       return nodes.reduce<TreeNode[]>((acc, node) => {
         if (node.type === "component") {
           if (node.id === componentId) return acc;
           acc.push(node);
         } else if (node.type === "folder") {
-          const updatedChildren = removeComponentFromNodes(node.children);
+          const updatedChildren = removeComponent(node.children);
           acc.push({ ...node, children: updatedChildren });
         }
         return acc;
       }, []);
     };
-    const newData = removeComponentFromNodes(treeData);
+    const newData = removeComponent(treeData);
     setTreeData(newData as FolderType[]);
     console.log("Component deleted, id:", componentId);
   };
 
-  // ----- DRAG–DROP HELPER FUNCTIONS -----
+  // ----- DRAG–DROP HANDLERS -----
 
-  /**
-   * Checks recursively whether a node is a descendant of a given parent.
-   */
-  const isDescendant = (parent: TreeNode, child: TreeNode): boolean => {
-    if (parent.type !== "folder") return false;
-    for (const node of parent.children) {
-      if (node.id === child.id) return true;
-      if (node.type === "folder" && isDescendant(node, child)) return true;
-    }
-    return false;
+  const handleMoveNode = (target: TreeNode, position: "above" | "below" | "inside" | "inside-bottom") => {
+    if (!draggedNode) return;
+    if (draggedNode.id === target.id) return;
+    const updatedTree = moveNodeInTree(treeData, draggedNode, target, position);
+    setTreeData(updatedTree as FolderType[]);
   };
 
   /**
-   * Inserts a node at a target location in the tree based on a given position.
-   */
-  const insertNode = (
-    nodes: TreeNode[],
-    targetId: number,
-    nodeToInsert: TreeNode,
-    position: "above" | "below" | "inside" | "inside-bottom"
-  ): TreeNode[] => {
-    const newNodes: TreeNode[] = [];
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
-      if (node.id === targetId) {
-        if (position === "above") {
-          newNodes.push(nodeToInsert);
-          newNodes.push(node);
-        } else if (position === "below") {
-          newNodes.push(node);
-          newNodes.push(nodeToInsert);
-        } else if (position === "inside") {
-          if (node.type === "folder") {
-            node.children = [nodeToInsert, ...node.children];
-          }
-          newNodes.push(node);
-        } else if (position === "inside-bottom") {
-          if (node.type === "folder") {
-            node.children = [...node.children, nodeToInsert];
-          }
-          newNodes.push(node);
-        } else {
-          newNodes.push(node);
-        }
-      } else if (node.type === "folder") {
-        node.children = insertNode(node.children, targetId, nodeToInsert, position);
-        newNodes.push(node);
-      } else {
-        newNodes.push(node);
-      }
-    }
-    return newNodes;
-  };
-
-  /**
-   * Removes a node (by id) from the tree and returns the new tree along with the removed node.
-   */
-  const removeNode = (
-    nodes: TreeNode[],
-    id: number
-  ): { newNodes: TreeNode[]; removed: TreeNode | null } => {
-    let removed: TreeNode | null = null;
-    const filtered = nodes.filter((node) => {
-      if (node.id === id) {
-        removed = node;
-        return false;
-      }
-      if (node.type === "folder") {
-        const result = removeNode(node.children, id);
-        if (result.removed) {
-          removed = result.removed;
-          node.children = result.newNodes;
-        }
-      }
-      return true;
-    });
-    return { newNodes: filtered, removed };
-  };
-
-  /**
-   * Moves a node (dragged) to a new location relative to a target node.
-   */
-  const moveNode = (
-    dragged: TreeNode,
-    target: TreeNode,
-    position: "above" | "below" | "inside" | "inside-bottom"
-  ) => {
-    // Prevent moving a folder into itself or one of its descendants.
-    if (
-      dragged.id === target.id ||
-      (dragged.type === "folder" && isDescendant(dragged, target))
-    ) {
-      console.warn("Invalid move: Cannot move a node into itself or its descendant.");
-      return;
-    }
-    let newTree = [...treeData];
-    const removalResult = removeNode(newTree, dragged.id);
-    newTree = removalResult.newNodes as FolderType[];
-    newTree = insertNode(newTree, target.id, dragged, position) as FolderType[];
-    setTreeData(newTree);
-    console.log(`Moved node ${dragged.id} to ${position} of node ${target.id}`);
-  };
-
-  // ----- RENDER TREE (FOLDER / COMPONENT DISPLAY) -----
-
-  /**
-   * Recursively renders the tree structure (folders and components)
-   * with support for drag–drop indicators.
+   * Recursively renders the tree structure (folders and components) with drag–drop support.
    */
   const renderTree = (nodes: TreeNode[], depth: number = 0, parentNode?: FolderType): JSX.Element => (
     <ul
       style={{ paddingLeft: `${depth * 0.9375}rem` }}
       onDragOver={(e) => {
-        // Handle drag–over on an entire list (parent drop zone)
         if (draggedNode && draggedNode.type === "component") {
           const rect = e.currentTarget.getBoundingClientRect();
           if (e.clientX < rect.left + INDENT) {
@@ -626,11 +672,11 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
           dropIndicator.effectiveParent &&
           parentNode
         ) {
+          // Remove dragged node and reinsert it at the target index
           const newNodes = [...nodes];
           const removalResult = removeNode(newNodes, draggedNode.id);
           const updatedNodes = removalResult.newNodes;
           updatedNodes.splice(dropIndicator.targetIndex!, 0, draggedNode);
-          // Update parent's children
           const updateParentChildren = (nodes: TreeNode[]): TreeNode[] => {
             return nodes.map((n) => {
               if (n.id === parentNode.id && n.type === "folder") {
@@ -661,15 +707,14 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
             e.preventDefault();
             e.stopPropagation();
             const rect = e.currentTarget.getBoundingClientRect();
-            // For folder targets, check if the mouse is over the folder header.
             if (node.type === "folder") {
               const headerEl = e.currentTarget.querySelector(".folder-header-container");
               if (headerEl) {
                 const headerRect = headerEl.getBoundingClientRect();
                 if (e.clientY < headerRect.bottom) {
                   let dropY = headerRect.bottom;
-                  let dropX = rect.left + INDENT; // indent for folder children
-                  if (!collapsed[node.id]) { // folder is open
+                  let dropX = rect.left + INDENT;
+                  if (!collapsed[node.id]) {
                     const childrenContainer = e.currentTarget.querySelector("ul");
                     if (childrenContainer) {
                       dropY = childrenContainer.getBoundingClientRect().bottom;
@@ -686,9 +731,8 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
                 }
               }
             }
-            // For component nodes, allow indicator only above or below.
             const offsetY = e.clientY - rect.top;
-            let pos: "above" | "below" = offsetY < rect.height / 2 ? "above" : "below";
+            const pos: "above" | "below" = offsetY < rect.height / 2 ? "above" : "below";
             setDropIndicator({ x: rect.left, y: e.clientY, width: rect.width, position: pos });
             setDragOverNodeId(node.id);
           }}
@@ -700,11 +744,10 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
               setDropIndicator(null);
               return;
             }
-            // If dropping on a folder header, force "inside-bottom"
             if (node.type === "folder" && dropIndicator && dropIndicator.position === "inside-bottom") {
-              moveNode(draggedNode, node, "inside-bottom");
+              handleMoveNode(node, "inside-bottom");
             } else if (dropIndicator && !dropIndicator.effectiveParent) {
-              moveNode(draggedNode, node, dropIndicator.position);
+              handleMoveNode(node, dropIndicator.position);
             }
             setDraggedNode(null);
             setDragOverNodeId(null);
@@ -721,11 +764,7 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
             <>
               <div className="folder-header-container">
                 <span onClick={() => toggleCollapse(node.id)}>
-                  {collapsed[node.id] ? (
-                    <FolderIcon fontSize="inherit" />
-                  ) : (
-                    <FolderOpenIcon fontSize="inherit" />
-                  )}{" "}
+                  {collapsed[node.id] ? <FolderIcon fontSize="inherit" /> : <FolderOpenIcon fontSize="inherit" />}{" "}
                   {renamingFolderId === node.id ? (
                     <input
                       type="text"
@@ -833,11 +872,7 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
               {!collapsed[node.id] && renderTree(node.children, depth + 1, node)}
               {editingFolderId === node.id && (
                 <div className="folder-input-container">
-                  {collapsed[node.id] ? (
-                    <FolderIcon fontSize="inherit" />
-                  ) : (
-                    <FolderOpenIcon fontSize="inherit" />
-                  )}
+                  {collapsed[node.id] ? <FolderIcon fontSize="inherit" /> : <FolderOpenIcon fontSize="inherit" />}
                   <input
                     type="text"
                     autoFocus
@@ -924,73 +959,25 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
   // ----- SIDEBAR RENDER -----
   return (
     <>
-      <div
-        id="sidebar-container"
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={handleFileDrop}
-      >
+      <div id="sidebar-container" onDragOver={(e) => e.preventDefault()} onDrop={handleFileDrop}>
         <h1>Prompt Builder</h1>
         <div className="tree">{renderTree(treeData)}</div>
         {modalOpen && (
-          <div
-            className="modal-overlay"
-            onClick={(e) => {
-              if ((e.target as HTMLElement).classList.contains("modal-overlay"))
-                closeModal();
-            }}
-          >
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <button className="modal-close" onClick={closeModal}>
-                <CloseIcon fontSize="inherit" />
-              </button>
-              <h3>{modalMode === "add" ? "Add Component" : "Edit Component"}</h3>
-              <label>
-                Name:
-                <input
-                  type="text"
-                  autoFocus
-                  value={modalName}
-                  onChange={(e) => setModalName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      submitModal();
-                    }
-                  }}
-                />
-              </label>
-              <label>
-                Type:
-                <select
-                  value={modalType}
-                  onChange={(e) =>
-                    setModalType(e.target.value as "context" | "main" | "instruction")
-                  }
-                >
-                  <option value="context">context</option>
-                  <option value="main">main</option>
-                  <option value="instruction">instruction</option>
-                </select>
-              </label>
-              <label style={{ flexGrow: 1 }}>
-                Content:
-                <textarea
-                  value={modalContent}
-                  onChange={(e) => setModalContent(e.target.value)}
-                ></textarea>
-              </label>
-              <button className="modal-submit" onClick={submitModal}>
-                {modalMode === "add" ? "Create" : "Confirm"}
-              </button>
-            </div>
-          </div>
+          <ModalDialog
+            modalMode={modalMode}
+            modalName={modalName}
+            modalType={modalType}
+            modalContent={modalContent}
+            setModalName={setModalName}
+            setModalType={setModalType}
+            setModalContent={setModalContent}
+            submitModal={submitModal}
+            closeModal={closeModal}
+          />
         )}
       </div>
       <div className="file-controls">
-        <button
-          className="load-json-btn"
-          onClick={() => fileInputRef.current?.click()}
-        >
+        <button className="load-json-btn" onClick={() => fileInputRef.current?.click()}>
           Load JSON
         </button>
         <input
@@ -1008,30 +995,27 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
   );
 };
 
-// ----- MAIN APP COMPONENT -----
-// Manages multiple prompts and displays the prompt editor with sections.
-// Also handles saving and loading of tree data and prompts from chrome storage.
+// ----- MAIN APP COMPONENT & PROMPT EDITOR HANDLERS ----- //
+
+/**
+ * Main App component that manages prompts and the prompt editor.
+ */
 const App: React.FC = () => {
   const [treeData, setTreeData] = useState<FolderType[]>(initialTreeData);
-
-  // Initialize prompts with one prompt containing the initial sections.
   const initialPromptId = Date.now();
   const [prompts, setPrompts] = useState<Prompt[]>([
     { id: initialPromptId, num: 1, name: "Prompt 1", sections: initialSections },
   ]);
-  // activePromptId tracks which prompt is being edited
   const [activePromptId, setActivePromptId] = useState<number>(initialPromptId);
-  // dropSectionIndex for drag–drop section reordering
   const [dropSectionIndex, setDropSectionIndex] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<number, HTMLTextAreaElement>>({});
   const sectionNameInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
-  // Get the currently active prompt.
   const activePrompt = prompts.find((p) => p.id === activePromptId) || { sections: [] };
 
   /**
-   * Updates the active prompt's sections in the overall prompts state.
+   * Updates sections for the active prompt.
    */
   const updateActivePromptSections = (newSections: Section[]) => {
     setPrompts((prev) =>
@@ -1039,15 +1023,12 @@ const App: React.FC = () => {
     );
   };
 
-  // ----- CHROME STORAGE: LOAD AND SAVE -----
+  // ----- CHROME STORAGE HANDLERS -----
 
-  // Load treeData and prompts from chrome storage.
   useEffect(() => {
     if (typeof chrome !== "undefined" && chrome.storage) {
       chrome.storage.local.get(["treeData", "prompts"], (result) => {
-        if (result.treeData) {
-          setTreeData(result.treeData);
-        }
+        if (result.treeData) setTreeData(result.treeData);
         if (result.prompts) {
           setPrompts(result.prompts);
           setActivePromptId(result.prompts[0]?.id || null);
@@ -1056,15 +1037,14 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Save treeData and prompts to chrome storage whenever they change.
   useEffect(() => {
     if (typeof chrome !== "undefined" && chrome.storage) {
       chrome.storage.local.set({ treeData, prompts });
     }
   }, [treeData, prompts]);
 
-  // ----- EFFECT: Adjust textarea heights on section changes -----
-  useEffect(() => {
+  // ----- EFFECT: Adjust textarea heights -----
+  useLayoutEffect(() => {
     Object.values(sectionRefs.current).forEach((textarea) => {
       if (textarea) {
         textarea.style.height = "auto";
@@ -1086,12 +1066,9 @@ const App: React.FC = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, [activePrompt.sections]);
 
-  // ----- SECTION MANAGEMENT FUNCTIONS -----
+  // ----- SECTION HANDLERS -----
 
-  /**
-   * Adds a new section after the given index. Optionally focuses the new section header.
-   */
-  const addSection = (afterIndex: number, focusNew: boolean = false) => {
+  const addSection = (afterIndex: number) => {
     const newSection: Section = {
       id: Date.now(),
       name: "",
@@ -1108,15 +1085,25 @@ const App: React.FC = () => {
     updateActivePromptSections(newArr);
     console.log("New section added:", newSection);
     setTimeout(() => {
-      if (focusNew && sectionNameInputRefs.current[newSection.id]) {
-        sectionNameInputRefs.current[newSection.id]?.focus();
+      const inputEl = sectionNameInputRefs.current[newSection.id];
+      if (inputEl && wrapperRef.current) {
+        // Save the current scroll position.
+        const currentScrollTop = wrapperRef.current.scrollTop;
+        // Focus the section header input.
+        inputEl.focus();
+        const inputRect = inputEl.getBoundingClientRect();
+        const wrapperRect = wrapperRef.current.getBoundingClientRect();
+        // If the new input is fully visible, restore scroll position.
+        if (inputRect.bottom <= wrapperRect.bottom) {
+          wrapperRef.current.scrollTop = currentScrollTop;
+        } else {
+          // Otherwise, scroll into view.
+          inputEl.scrollIntoView({ behavior: "auto", block: "nearest", inline: "nearest" });
+        }
       }
-    }, 0);
+    }, 50);    
   };
 
-  /**
-   * Toggles a section's open/closed state.
-   */
   const toggleSection = (sectionId: number) => {
     const newSections = activePrompt.sections.map((sec) =>
       sec.id === sectionId ? { ...sec, open: !sec.open } : sec
@@ -1124,9 +1111,6 @@ const App: React.FC = () => {
     updateActivePromptSections(newSections);
   };
 
-  /**
-   * Updates a section's content and marks it as dirty if it no longer matches its linked component.
-   */
   const updateSectionContent = (sectionId: number, newContent: string) => {
     const newSections = activePrompt.sections.map((sec) => {
       if (sec.id === sectionId) {
@@ -1138,9 +1122,6 @@ const App: React.FC = () => {
     updateActivePromptSections(newSections);
   };
 
-  /**
-   * Updates a section's header (name and type) and ends editing mode.
-   */
   const updateSectionHeader = (
     sectionId: number,
     newName: string,
@@ -1161,9 +1142,6 @@ const App: React.FC = () => {
     updateActivePromptSections(newSections);
   };
 
-  /**
-   * Begins header editing mode for a section.
-   */
   const startHeaderEdit = (section: Section) => {
     const newSections = activePrompt.sections.map((s) =>
       s.id === section.id
@@ -1173,9 +1151,6 @@ const App: React.FC = () => {
     updateActivePromptSections(newSections);
   };
 
-  /**
-   * Cancels header editing for a section.
-   */
   const cancelHeaderEdit = (sectionId: number) => {
     const newSections = activePrompt.sections.map((s) =>
       s.id === sectionId
@@ -1185,42 +1160,26 @@ const App: React.FC = () => {
     updateActivePromptSections(newSections);
   };
 
-  /**
-   * Commits header editing changes for a section.
-   */
   const commitHeaderEdit = (section: Section) => {
     const newName = section.editingHeaderTempName ?? section.name;
     const newType = section.editingHeaderTempType ?? section.type;
     updateSectionHeader(section.id, newName, newType);
   };
 
-  /**
-   * Handles key down events within a section's textarea.
-   * On Enter (without Shift) at the end of text, a new section is added.
-   */
   const handleSectionKeyDown = (
     e: KeyboardEvent<HTMLTextAreaElement>,
     section: Section,
     index: number
   ) => {
-    if (e.key === "Enter") {
-      if (e.shiftKey) {
-        return;
-      } else {
-        e.preventDefault();
-        const target = e.currentTarget;
-        if (target.selectionStart === target.value.length) {
-          const newVal = target.value;
-          updateSectionContent(section.id, newVal);
-          addSection(index, true);
-        }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (e.currentTarget.selectionStart === e.currentTarget.value.length) {
+        updateSectionContent(section.id, e.currentTarget.value);
+        addSection(index);
       }
     }
   };
 
-  /**
-   * Determines the insertion index for drag–drop reordering by inspecting section container positions.
-   */
   const handleWrapperDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (!wrapperRef.current) return;
@@ -1241,13 +1200,8 @@ const App: React.FC = () => {
     setDropSectionIndex(null);
   };
 
-  /**
-   * Handles dropping a component into the prompt editor.
-   * Creates a new section from the dropped component.
-   */
   const handleWrapperDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (!wrapperRef.current) return;
     const data = e.dataTransfer.getData("application/json");
     if (data) {
       const comp: ComponentType = JSON.parse(data);
@@ -1271,23 +1225,20 @@ const App: React.FC = () => {
     setDropSectionIndex(null);
   };
 
-  /**
-   * Saves changes in a section back to its linked component.
-   */
   const handleSaveSection = (section: Section) => {
     if (!section.linkedComponentId) return;
     const newContent = section.content;
-    const updateComponent = (nodes: TreeNode[]): TreeNode[] => {
+    const updateComponentInTree = (nodes: TreeNode[]): TreeNode[] => {
       return nodes.map((node) => {
         if (node.type === "component" && node.id === section.linkedComponentId) {
           return { ...node, content: newContent };
         } else if (node.type === "folder" && node.children) {
-          return { ...node, children: updateComponent(node.children) };
+          return { ...node, children: updateComponentInTree(node.children) };
         }
         return node;
       });
     };
-    setTreeData((prev) => updateComponent(prev) as FolderType[]);
+    setTreeData((prev) => updateComponentInTree(prev) as FolderType[]);
     const newSections = activePrompt.sections.map((sec) =>
       sec.id === section.id ? { ...sec, originalContent: newContent, dirty: false } : sec
     );
@@ -1295,9 +1246,6 @@ const App: React.FC = () => {
     console.log("Section saved and component updated, section id:", section.id);
   };
 
-  /**
-   * Returns a color based on the section type.
-   */
   const getColor = (t: "context" | "main" | "instruction") => {
     if (t === "context") return "#2196f3";
     if (t === "main") return "#4caf50";
@@ -1305,19 +1253,14 @@ const App: React.FC = () => {
     return "#000";
   };
 
-  /**
-   * Copies the compiled prompt (all section contents joined) to the clipboard.
-   */
   const handleCopy = () => {
     const compiledPrompt = activePrompt.sections.map((sec) => sec.content).join("\n\n");
-    navigator.clipboard.writeText(compiledPrompt)
+    navigator.clipboard
+      .writeText(compiledPrompt)
       .then(() => console.log("Prompt copied to clipboard."))
       .catch((err) => console.error("Failed to copy prompt: ", err));
   };
 
-  /**
-   * Creates a new prompt, switches to it, and ensures that only the most recent prompts are kept.
-   */
   const handleNewPrompt = () => {
     const newPrompt: Prompt = {
       id: Date.now(),
@@ -1334,9 +1277,6 @@ const App: React.FC = () => {
     console.log("New prompt created:", newPrompt);
   };
 
-  /**
-   * Switches the active prompt for editing.
-   */
   const handleSwitchPrompt = (promptId: number) => {
     setActivePromptId(promptId);
     console.log("Switched to prompt:", promptId);
@@ -1349,7 +1289,6 @@ const App: React.FC = () => {
         <Sidebar treeData={treeData} setTreeData={setTreeData} />
       </section>
       <section id="content">
-        {/* Prompt Tabs */}
         <div className="prompt-tabs">
           {prompts.map((p) => (
             <button
@@ -1377,40 +1316,22 @@ const App: React.FC = () => {
                   const containers = wrapperRef.current.querySelectorAll(".section-container");
                   if (dropSectionIndex === 0) return 0;
                   if (containers[dropSectionIndex - 1]) {
-                    const rect = containers[dropSectionIndex - 1].getBoundingClientRect();
-                    const wrapperRect = wrapperRef.current.getBoundingClientRect();
-                    return rect.bottom - wrapperRect.top;
+                    const prevContainer = containers[dropSectionIndex - 1] as HTMLElement;
+                    return prevContainer.offsetTop + prevContainer.offsetHeight;
                   }
                   return 0;
                 })(),
               }}
-            >
-              <button
-                className="hover-add-btn"
-                onClick={() => addSection(dropSectionIndex!, true)}
-              >
-                +
-              </button>
-            </div>
+            ></div>
           )}
           {activePrompt.sections.map((sec, index) => (
             <div className="section-container" key={sec.id}>
               {sec.linkedComponentId && (
-                <div
-                  className="section-marker"
-                  style={{ backgroundColor: getColor(sec.type) }}
-                ></div>
+                <div className="section-marker" style={{ backgroundColor: getColor(sec.type) }}></div>
               )}
               <div className="section-header">
-                <button
-                  className="accordion-toggle"
-                  onClick={() => toggleSection(sec.id)}
-                >
-                  {sec.open ? (
-                    <ExpandLessIcon fontSize="inherit" />
-                  ) : (
-                    <ExpandMoreIcon fontSize="inherit" />
-                  )}
+                <button className="accordion-toggle" onClick={() => toggleSection(sec.id)}>
+                  {sec.open ? <ExpandLessIcon fontSize="inherit" /> : <ExpandMoreIcon fontSize="inherit" />}
                 </button>
                 {sec.editingHeader ? (
                   <div className="section-header-edit-container">
@@ -1431,7 +1352,7 @@ const App: React.FC = () => {
                         if (e.key === "Enter") {
                           commitHeaderEdit(sec);
                           setTimeout(() => {
-                            sectionRefs.current[sec.id]?.focus();
+                            sectionRefs.current[sec.id]?.focus({ preventScroll: true });
                           }, 0);
                         }
                         if (e.key === "Escape") {
@@ -1458,30 +1379,19 @@ const App: React.FC = () => {
                     </select>
                   </div>
                 ) : (
-                  <span
-                    className="section-header-text"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      startHeaderEdit(sec);
-                    }}
-                  >
+                  <span className="section-header-text" onClick={() => startHeaderEdit(sec)}>
                     {sec.name || "Unnamed"} • {sec.type}
                   </span>
                 )}
                 {sec.linkedComponentId && sec.dirty && (
-                  <button
-                    className="section-save-btn"
-                    onClick={() => handleSaveSection(sec)}
-                  >
+                  <button className="section-save-btn" onClick={() => handleSaveSection(sec)}>
                     Save
                   </button>
                 )}
                 <button
                   className="section-delete-btn"
                   onClick={() =>
-                    updateActivePromptSections(
-                      activePrompt.sections.filter((s) => s.id !== sec.id)
-                    )
+                    updateActivePromptSections(activePrompt.sections.filter((s) => s.id !== sec.id))
                   }
                 >
                   x
@@ -1509,10 +1419,16 @@ const App: React.FC = () => {
         </div>
         <div className="copy-button-container">
           <div className="left">
-            <button className="copy-btn" onClick={handleCopy}>Copy</button>
-            <button className="new-section-btn" onClick={() => addSection(activePrompt.sections.length - 1, true)}>New Section</button>
+            <button className="copy-btn" onClick={handleCopy}>
+              Copy
+            </button>
+            <button className="new-section-btn" onClick={() => addSection(activePrompt.sections.length - 1)}>
+              New Section
+            </button>
           </div>
-          <button className="new-prompt-btn" onClick={handleNewPrompt}>New Prompt</button>
+          <button className="new-prompt-btn" onClick={handleNewPrompt}>
+            New Prompt
+          </button>
         </div>
       </section>
     </main>
