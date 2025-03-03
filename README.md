@@ -11,6 +11,8 @@ The Modular Prompting Tool - Drag, drop, and assemble reusable prompt components
 
 The Prompt Builder icon will appear in your extensions bar! Click the icon to open the prompt builder in a new tab! Pin it for easy access.
 
+Your prompts and component library will save locally in the browser, but it is a good practice to save a json file locally in case your browser storage deletes.
+
 ## Contribute to Prompt Builder 🤝
 We welcome contributions! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
 
