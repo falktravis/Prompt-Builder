@@ -24,8 +24,11 @@ We welcome contributions! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for
 
 ## Feature Ideas 💡
 Here are some potential enhancements for the project:
+- Built in meta-prompting
+- Component prompt variables
+- Component nesting
 - Streamline completed prompt saving and downloading
-- Styles and User Experience Centered Design
+- Upgrade Styles/Design (please)
 - Compiled Prompt Libraries
 
 ### Bugs
