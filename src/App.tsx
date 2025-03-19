@@ -1319,6 +1319,21 @@ const App: React.FC = () => {
     console.log("Switched to prompt:", promptId);
   };
 
+  const handleTextareaFocus = () => {
+    // If we have a wrapper reference, save its current scroll position
+    if (wrapperRef.current) {
+      const currentScrollTop = wrapperRef.current.scrollTop;
+      
+      // Use setTimeout to let the browser's default focus behavior happen first
+      setTimeout(() => {
+        // Then restore the scroll position
+        if (wrapperRef.current) {
+          wrapperRef.current.scrollTop = currentScrollTop;
+        }
+      }, 0);
+    }
+  };
+
   // ----- MAIN APP RENDER -----
   return (
     <main>
@@ -1439,20 +1454,21 @@ const App: React.FC = () => {
               </div>
               {sec.open && (
                 <textarea
-                  className="section-input"
-                  value={sec.content}
-                  onChange={(e) => updateSectionContent(sec.id, e.target.value)}
-                  onKeyDown={(e) => handleSectionKeyDown(e, sec, index)}
-                  placeholder="Enter section content..."
-                  ref={(el) => {
-                    if (el) sectionRefs.current[sec.id] = el;
-                  }}
-                  onInput={(e) => {
-                    const ta = e.currentTarget;
-                    ta.style.height = "auto";
-                    ta.style.height = ta.scrollHeight + "px";
-                  }}
-                ></textarea>
+                className="section-input"
+                value={sec.content}
+                onChange={(e) => updateSectionContent(sec.id, e.target.value)}
+                onKeyDown={(e) => handleSectionKeyDown(e, sec, index)}
+                onFocus={handleTextareaFocus}
+                placeholder="Enter section content..."
+                ref={(el) => {
+                  if (el) sectionRefs.current[sec.id] = el;
+                }}
+                onInput={(e) => {
+                  const ta = e.currentTarget;
+                  ta.style.height = "auto";
+                  ta.style.height = ta.scrollHeight + "px";
+                }}
+              ></textarea>
               )}
             </div>
           ))}
