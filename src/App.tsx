@@ -30,9 +30,12 @@ import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+
 import AbcIcon from "@mui/icons-material/Abc";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
+import PersonIcon from "@mui/icons-material/Person";
+import BrushIcon from "@mui/icons-material/Brush";
 
 // ----- TYPE DEFINITIONS -----
 export type ComponentType = {
@@ -40,7 +43,7 @@ export type ComponentType = {
   name: string;
   type: "component";
   content: string;
-  componentType: "context" | "main" | "instruction";
+  componentType: "instruction" | "role" | "context" | "format" | "style";
 };
 
 export type FolderType = {
@@ -56,14 +59,14 @@ export type Section = {
   id: number;
   name: string;
   content: string;
-  type: "context" | "main" | "instruction";
+  type: "instruction" | "role" | "context" | "format" | "style";
   linkedComponentId?: number;
   originalContent?: string;
   open: boolean;
   dirty: boolean;
   editingHeader?: boolean;
   editingHeaderTempName?: string;
-  editingHeaderTempType?: "context" | "main" | "instruction";
+  editingHeaderTempType?: "instruction" | "role" | "context" | "format" | "style";
 };
 
 export type Prompt = {
@@ -90,7 +93,7 @@ const initialSections: Section[] = [
     id: Date.now(),
     name: "Section 1",
     content: "",
-    type: "main",
+    type: "instruction",
     open: true,
     dirty: false,
     editingHeader: false,
@@ -288,10 +291,10 @@ type SidebarProps = {
 const ModalDialog: React.FC<{
   modalMode: "add" | "edit" | null;
   modalName: string;
-  modalType: "context" | "main" | "instruction";
+  modalType: "instruction" | "role" | "context" | "format" | "style";
   modalContent: string;
   setModalName: (name: string) => void;
-  setModalType: (type: "context" | "main" | "instruction") => void;
+  setModalType: (type: "instruction" | "role" | "context" | "format" | "style") => void;
   setModalContent: (content: string) => void;
   submitModal: () => void;
   closeModal: () => void;
@@ -338,12 +341,14 @@ const ModalDialog: React.FC<{
           <select
             value={modalType}
             onChange={(e) =>
-              setModalType(e.target.value as "context" | "main" | "instruction")
+              setModalType(e.target.value as "instruction" | "role" | "context" | "format" | "style")
             }
           >
-            <option value="context">context</option>
-            <option value="main">main</option>
             <option value="instruction">instruction</option>
+            <option value="role">role</option>
+            <option value="context">context</option>
+            <option value="format">format</option>
+            <option value="style">style</option>
           </select>
         </label>
         <label style={{ flexGrow: 1 }}>
@@ -376,7 +381,7 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
   const [modalFolderId, setModalFolderId] = useState<number | null>(null);
   const [modalComponent, setModalComponent] = useState<ComponentType | null>(null);
   const [modalName, setModalName] = useState<string>("");
-  const [modalType, setModalType] = useState<"context" | "main" | "instruction">("context");
+  const [modalType, setModalType] = useState<"instruction" | "role" | "context" | "format" | "style">("instruction");
   const [modalContent, setModalContent] = useState<string>("");
   const [renamingFolderId, setRenamingFolderId] = useState<number | null>(null);
   const [renameFolderName, setRenameFolderName] = useState<string>("");
@@ -411,7 +416,10 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
     ) => {
       nodes.forEach((node) => {
         if (node.type === "folder" && node.id !== 1) {
-          state[node.id] = true;
+          // Only initialize if this folder doesn't already have a state
+          if (state[node.id] === undefined) {
+            state[node.id] = true;
+          }
         }
         if (node.type === "folder" && node.children) {
           initializeCollapsedState(node.children, state);
@@ -419,7 +427,14 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
       });
       return state;
     };
-    setCollapsed(initializeCollapsedState(treeData));
+    
+    setCollapsed((prevCollapsed) => {
+      // Merge previous state with new state for any new folders
+      return { 
+        ...prevCollapsed, 
+        ...initializeCollapsedState(treeData, { ...prevCollapsed }) 
+      };
+    });
   }, [treeData]);
 
   // ----- FILE LOAD / SAVE HANDLERS -----
@@ -912,19 +927,29 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
                 </button>
               </div>
               <div className="component-container">
+                {node.componentType === "instruction" && (
+                  <div className="icon instruction-icon">
+                    <FormatListBulletedIcon />
+                  </div>
+                )}
+                {node.componentType === "role" && (
+                  <div className="icon role-icon">
+                    <PersonIcon />
+                  </div>
+                )}
                 {node.componentType === "context" && (
                   <div className="icon context-icon">
                     <LibraryBooksIcon />
                   </div>
                 )}
-                {node.componentType === "main" && (
-                  <div className="icon main-icon">
+                {node.componentType === "format" && (
+                  <div className="icon format-icon">
                     <AbcIcon />
                   </div>
                 )}
-                {node.componentType === "instruction" && (
-                  <div className="icon instruction-icon">
-                    <FormatListBulletedIcon />
+                {node.componentType === "style" && (
+                  <div className="icon style-icon">
+                    <BrushIcon />
                   </div>
                 )}
                 <div className="component-title">{node.name}</div>
@@ -1073,12 +1098,12 @@ const App: React.FC = () => {
       id: Date.now(),
       name: "",
       content: "",
-      type: "main",
+      type: "instruction",
       open: true,
       dirty: false,
       editingHeader: true,
       editingHeaderTempName: "",
-      editingHeaderTempType: "main",
+      editingHeaderTempType: "instruction",
     };
     const newArr = [...activePrompt.sections];
     newArr.splice(afterIndex + 1, 0, newSection);
@@ -1125,7 +1150,7 @@ const App: React.FC = () => {
   const updateSectionHeader = (
     sectionId: number,
     newName: string,
-    newType: "context" | "main" | "instruction"
+    newType: "instruction" | "role" | "context" | "format" | "style"
   ) => {
     const newSections = activePrompt.sections.map((sec) =>
       sec.id === sectionId
@@ -1142,13 +1167,23 @@ const App: React.FC = () => {
     updateActivePromptSections(newSections);
   };
 
-  const startHeaderEdit = (section: Section) => {
+  const startHeaderEdit = (section: Section, e?: React.MouseEvent) => {
+    // Stop propagation to prevent document click handler from immediately closing the editor
+    e?.stopPropagation();
+    
     const newSections = activePrompt.sections.map((s) =>
       s.id === section.id
         ? { ...s, editingHeader: true, editingHeaderTempName: s.name, editingHeaderTempType: s.type }
         : s
     );
     updateActivePromptSections(newSections);
+    
+    // Set timeout to focus on the input after the state update
+    setTimeout(() => {
+      if (sectionNameInputRefs.current[section.id]) {
+        sectionNameInputRefs.current[section.id]?.focus();
+      }
+    }, 10);
   };
 
   const cancelHeaderEdit = (sectionId: number) => {
@@ -1246,10 +1281,12 @@ const App: React.FC = () => {
     console.log("Section saved and component updated, section id:", section.id);
   };
 
-  const getColor = (t: "context" | "main" | "instruction") => {
+  const getColor = (t: "instruction" | "role" | "context" | "format" | "style") => {
     if (t === "context") return "#2196f3";
-    if (t === "main") return "#4caf50";
+    if (t === "format") return "#4caf50";
     if (t === "instruction") return "#ff9800";
+    if (t === "role") return "#f7e920";
+    if (t === "style") return "#b01aca";
     return "#000";
   };
 
@@ -1336,6 +1373,7 @@ const App: React.FC = () => {
                 {sec.editingHeader ? (
                   <div className="section-header-edit-container">
                     <input
+                      ref={(el) => { sectionNameInputRefs.current[sec.id] = el; }}
                       autoFocus
                       className="section-name-input"
                       type="text"
@@ -1367,19 +1405,21 @@ const App: React.FC = () => {
                         updateActivePromptSections(
                           activePrompt.sections.map((s) =>
                             s.id === sec.id
-                              ? { ...s, editingHeaderTempType: e.target.value as "context" | "main" | "instruction" }
+                              ? { ...s, editingHeaderTempType: e.target.value as "instruction" | "role" | "context" | "format" | "style" }
                               : s
                           )
                         )
                       }
                     >
-                      <option value="context">context</option>
-                      <option value="main">main</option>
                       <option value="instruction">instruction</option>
+                      <option value="role">role</option>
+                      <option value="context">context</option>
+                      <option value="format">format</option>
+                      <option value="style">style</option>
                     </select>
                   </div>
                 ) : (
-                  <span className="section-header-text" onClick={() => startHeaderEdit(sec)}>
+                  <span className="section-header-text" onClick={(e) => startHeaderEdit(sec, e)}>
                     {sec.name || "Unnamed"} • {sec.type}
                   </span>
                 )}
