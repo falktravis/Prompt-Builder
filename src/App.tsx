@@ -30,6 +30,8 @@ import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import SettingsIcon from "@mui/icons-material/Settings";
+import Switch from "@mui/material/Switch";
 
 import AbcIcon from "@mui/icons-material/Abc";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
@@ -76,6 +78,16 @@ export type Prompt = {
   sections: Section[];
 };
 
+// Settings type definition
+export type Settings = {
+  autoSave: boolean;
+  defaultPromptName: string;
+  defaultSectionType: "instruction" | "role" | "context" | "format" | "style";
+  theme: "dark" | "light";
+  markdownPromptingEnabled: boolean;
+  systemPrompt: string;
+};
+
 // ----- CONSTANTS & INITIAL DATA -----
 const INDENT = 20;
 
@@ -99,6 +111,16 @@ const initialSections: Section[] = [
     editingHeader: false,
   },
 ];
+
+// Default settings
+const defaultSettings: Settings = {
+  autoSave: true,
+  defaultPromptName: "Prompt",
+  defaultSectionType: "instruction",
+  theme: "dark",
+  markdownPromptingEnabled: false,
+  systemPrompt: "# Prompt Structure/System Guide\n\nThis document outlines a structured request format for the following prompt. Each section of the prompt is clearly marked with a markdown heading that indicates both the section type and title.\n\n## Section Types\n\n### **Role** \nDefines the expertise, perspective, or character you will adopt. You will embody this role completely while processing and responding to the prompt.\n\n### **Context** \nProvides essential background information and situational details needed for you to understand the task. All context is critical for generating an appropriate response.\n\n### **Instructions** \nSpecifies the exact deliverables and actions required. This section defines success criteria and should be followed precisely.\n\n### **Style** \nEstablishes guidelines for your style in formulating a response. Your response should consistently adhere to these stylistic guidelines.\n\n### **Format** \nDetails the structural requirements for the output, including organization, layout, and presentation specifications.\n\n## Implementation\n\n- Each section begins with a level-1 markdown heading: `# [Type]: [Title]`\n- You will thoroughly process all sections before producing a response\n- You must prioritize following instructions precisely while maintaining the specified role, context awareness, style, and format\n\nWhat follows is the prompt using the outlined system and formatting.",
+};
 
 // ----- UTILITY FUNCTIONS ----- //
 
@@ -283,6 +305,7 @@ const moveNodeInTree = (
 type SidebarProps = {
   treeData: FolderType[];
   setTreeData: React.Dispatch<React.SetStateAction<FolderType[]>>;
+  openSettings: () => void; // Add this prop
 };
 
 /**
@@ -344,11 +367,11 @@ const ModalDialog: React.FC<{
               setModalType(e.target.value as "instruction" | "role" | "context" | "format" | "style")
             }
           >
-            <option value="instruction">instruction</option>
-            <option value="role">role</option>
-            <option value="context">context</option>
-            <option value="format">format</option>
-            <option value="style">style</option>
+            <option value="instruction">Instruction</option>
+            <option value="role">Role</option>
+            <option value="context">Context</option>
+            <option value="format">Format</option>
+            <option value="style">Style</option>
           </select>
         </label>
         <label style={{ flexGrow: 1 }}>
@@ -367,10 +390,89 @@ const ModalDialog: React.FC<{
 };
 
 /**
+ * Renders a modal dialog for managing application settings.
+ */
+const SettingsModal: React.FC<{
+  settings: Settings;
+  saveSettings: (settings: Settings) => void;
+  closeModal: () => void;
+}> = ({ settings, saveSettings, closeModal }) => {
+  // Local state to track changes before saving
+  const [tempSettings, setTempSettings] = useState<Settings>({...settings});
+  
+  const handleSave = () => {
+    saveSettings(tempSettings);
+    closeModal();
+  };
+  
+  const resetSystemPrompt = () => {
+    setTempSettings({
+      ...tempSettings, 
+      systemPrompt: defaultSettings.systemPrompt
+    });
+  };
+  
+  return (
+    <div
+      className="modal-overlay"
+      onClick={(e) => {
+        if ((e.target as HTMLElement).classList.contains("modal-overlay")) closeModal();
+      }}
+    >
+      <div className="modal-content settings-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={closeModal}>
+          <CloseIcon fontSize="inherit" />
+        </button>
+        <h3>Settings</h3>
+        
+        <div className="settings-section">
+          <h4>Markdown Component Prompting System</h4>
+          <p>Systematic method for structuring sectioned prompts for increased understanding. See a more in depth explanation <a href="https://github.com/falktravis/Prompt-Builder/discussions/1">here</a>.</p>
+          <label className="settings-toggle">
+            <span>Markdown Component Prompting System</span>
+            <Switch
+              checked={tempSettings.markdownPromptingEnabled}
+              onChange={(e) => setTempSettings({...tempSettings, markdownPromptingEnabled: e.target.checked})}
+              color="primary"
+            />
+          </label>
+          
+          {tempSettings.markdownPromptingEnabled && (
+            <div className="settings-field">
+              <div className="system-prompt-header">
+                <label>System Prompt:</label>
+                <button 
+                  className="reset-default-btn" 
+                  onClick={resetSystemPrompt}
+                  title="Reset to default system prompt"
+                >
+                  Reset to Default
+                </button>
+              </div>
+              <textarea
+                className="system-prompt-textarea"
+                value={tempSettings.systemPrompt}
+                onChange={(e) => setTempSettings({...tempSettings, systemPrompt: e.target.value})}
+                rows={8}
+              />
+            </div>
+          )}
+        </div>
+        
+        <div className="settings-actions">
+          <button onClick={handleSave} className="modal-submit">Save</button>
+          <button onClick={closeModal} className="modal-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
  * Sidebar component that manages folder/component tree, file load/save,
  * modal editing, and folder management.
  */
-const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
+const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData, openSettings }) => {
   // ----- STATE VARIABLES -----
   const [collapsed, setCollapsed] = useState<{ [key: number]: boolean }>({});
   const [editingFolderId, setEditingFolderId] = useState<number | null>(null);
@@ -985,7 +1087,12 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData }) => {
   return (
     <>
       <div id="sidebar-container" onDragOver={(e) => e.preventDefault()} onDrop={handleFileDrop}>
-        <h1>Prompt Builder</h1>
+        <h1>
+          Prompt Builder
+          <button className="settings-btn" onClick={openSettings}>
+            <SettingsIcon fontSize="inherit" />
+          </button>
+        </h1>
         <div className="tree">{renderTree(treeData)}</div>
         {modalOpen && (
           <ModalDialog
@@ -1036,6 +1143,10 @@ const App: React.FC = () => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<number, HTMLTextAreaElement>>({});
   const sectionNameInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  
+  // Add settings state and modal state
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
 
   const activePrompt = prompts.find((p) => p.id === activePromptId) || { sections: [] };
 
@@ -1068,6 +1179,26 @@ const App: React.FC = () => {
     }
   }, [treeData, prompts]);
 
+  // ----- SETTINGS HANDLERS -----
+  useEffect(() => {
+    // Load settings from localStorage
+    const savedSettings = localStorage.getItem("promptBuilderSettings");
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        setSettings(parsedSettings);
+      } catch (error) {
+        console.error("Failed to parse settings from localStorage:", error);
+      }
+    }
+  }, []);
+
+  const saveSettings = (newSettings: Settings) => {
+    setSettings(newSettings);
+    localStorage.setItem("promptBuilderSettings", JSON.stringify(newSettings));
+    console.log("Settings saved:", newSettings);
+  };
+
   // ----- EFFECT: Adjust textarea heights -----
   useLayoutEffect(() => {
     Object.values(sectionRefs.current).forEach((textarea) => {
@@ -1098,7 +1229,7 @@ const App: React.FC = () => {
       id: Date.now(),
       name: "",
       content: "",
-      type: "instruction",
+      type: 'instruction',
       open: true,
       dirty: false,
       editingHeader: true,
@@ -1291,7 +1422,23 @@ const App: React.FC = () => {
   };
 
   const handleCopy = () => {
-    const compiledPrompt = activePrompt.sections.map((sec) => sec.content).join("\n\n");
+    let compiledPrompt: string;
+    
+    if (settings.markdownPromptingEnabled) {
+      // Start with the system prompt
+      let promptText = settings.systemPrompt + "\n\n";
+      
+      // Add each section with the proper markdown heading format with capitalized type
+      promptText += activePrompt.sections.map(sec => 
+        `# ${sec.type.charAt(0).toUpperCase() + sec.type.slice(1)}: ${sec.name}\n\n${sec.content}`
+      ).join("\n\n");
+      
+      compiledPrompt = promptText;
+    } else {
+      // Original functionality - just join the contents
+      compiledPrompt = activePrompt.sections.map((sec) => sec.content).join("\n\n");
+    }
+    
     navigator.clipboard
       .writeText(compiledPrompt)
       .then(() => console.log("Prompt copied to clipboard."))
@@ -1299,10 +1446,11 @@ const App: React.FC = () => {
   };
 
   const handleNewPrompt = () => {
+    const nextNum = prompts.length > 0 ? prompts[prompts.length - 1].num + 1 : 1;
     const newPrompt: Prompt = {
       id: Date.now(),
-      num: prompts[prompts.length - 1].num + 1,
-      name: `Prompt ${prompts[prompts.length - 1].num + 1}`,
+      num: nextNum,
+      name: `Section ${nextNum}`, // Use from settings
       sections: initialSections,
     };
     let updatedPrompts = [...prompts, newPrompt];
@@ -1338,7 +1486,7 @@ const App: React.FC = () => {
   return (
     <main>
       <section id="side-bar">
-        <Sidebar treeData={treeData} setTreeData={setTreeData} />
+        <Sidebar treeData={treeData} setTreeData={setTreeData} openSettings={() => setShowSettingsModal(true)} />
       </section>
       <section id="content">
         <div className="prompt-tabs">
@@ -1413,29 +1561,29 @@ const App: React.FC = () => {
                         }
                       }}
                     />
-                    <select
-                      className="section-type-select"
-                      value={sec.editingHeaderTempType ?? sec.type}
-                      onChange={(e) =>
-                        updateActivePromptSections(
-                          activePrompt.sections.map((s) =>
-                            s.id === sec.id
-                              ? { ...s, editingHeaderTempType: e.target.value as "instruction" | "role" | "context" | "format" | "style" }
-                              : s
+                      <select
+                        className="section-type-select"
+                        value={sec.editingHeaderTempType ?? sec.type}
+                        onChange={(e) =>
+                          updateActivePromptSections(
+                            activePrompt.sections.map((s) =>
+                              s.id === sec.id
+                                ? { ...s, editingHeaderTempType: e.target.value as "instruction" | "role" | "context" | "format" | "style" }
+                                : s
+                            )
                           )
-                        )
-                      }
-                    >
-                      <option value="instruction">instruction</option>
-                      <option value="role">role</option>
-                      <option value="context">context</option>
-                      <option value="format">format</option>
-                      <option value="style">style</option>
-                    </select>
+                        }
+                      >
+                        <option value="instruction">Instruction</option>
+                        <option value="role">Role</option>
+                        <option value="context">Context</option>
+                        <option value="format">Format</option>
+                        <option value="style">Style</option>
+                      </select>
                   </div>
                 ) : (
                   <span className="section-header-text" onClick={(e) => startHeaderEdit(sec, e)}>
-                    {sec.name || "Unnamed"} • {sec.type}
+                    {sec.name || "Unnamed"} • {sec.type.charAt(0).toUpperCase() + sec.type.slice(1)}
                   </span>
                 )}
                 {sec.linkedComponentId && sec.dirty && (
@@ -1487,6 +1635,13 @@ const App: React.FC = () => {
           </button>
         </div>
       </section>
+      {showSettingsModal && (
+        <SettingsModal
+          settings={settings}
+          saveSettings={saveSettings}
+          closeModal={() => setShowSettingsModal(false)}
+        />
+      )}
     </main>
   );
 };

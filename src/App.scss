@@ -115,7 +115,22 @@ main {
   /* Sidebar header styling */
   h1 {
     font-size: 2rem;
-    @include flex(row, flex-start, center);
+    @include flex(row, space-between, center);
+    gap: 0.625rem;
+    width: 100%;
+
+    .settings-btn {
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: grey;
+      font-size: 1.75rem;
+      @include flex(row, center, center);
+      
+      &:hover {
+        color: lighten($accent-color, 10%);
+      }
+    }
   }
 
   /* Container for nested sidebar items */
@@ -552,6 +567,117 @@ main {
     padding: 0.5rem;
     border-radius: 0.25rem;
     border: none;
+  }
+}
+
+/* Settings modal specific styles */
+.settings-modal {
+  width: 40rem;
+  max-width: 90vw;
+  height: auto;
+  max-height: 90vh;
+  
+  .settings-section {
+    margin: 1rem 0;
+    
+    h4 {
+      margin-bottom: 0.15rem;
+      color: $accent-color;
+      font-size: 1.125rem;
+    }
+
+    >p{
+      margin-bottom: 0.5rem;
+      color: $light-gray;
+      font-size: 0.825rem;
+
+      a{
+        color: #089ad9;
+        text-decoration: none;
+        font-weight: bold;
+      }
+    }
+    
+    label {
+      display: block;
+      margin: 0.75rem 0;
+      
+      input, select {
+        width: 100%;
+        margin-top: 0.375rem;
+      }
+    }
+    
+    .settings-toggle {
+      @include flex(row, space-between, center);
+    }
+    
+    .settings-toggle {
+      @include flex(row, space-between, center);
+      margin: 1rem 0;
+    }
+    
+    .settings-field {
+      margin: 1rem 0;
+      
+      .system-prompt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        
+        label {
+          margin: 0;
+        }
+        
+        .reset-default-btn {
+          background: transparent;
+          color: $accent-color;
+          border: 1px solid $accent-color;
+          border-radius: 0.25rem;
+          padding: 0.25rem 0.5rem;
+          font-size: 0.8rem;
+          cursor: pointer;
+          
+          &:hover {
+            background-color: rgba($accent-color, 0.1);
+          }
+        }
+      }
+      
+      .system-prompt-textarea {
+        width: 100%;
+        min-height: 200px;
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+        background-color: #555;
+        border: 1px solid #777;
+        color: $text-color;
+        border-radius: 0.25rem;
+        font-family: $primary-font;
+        resize: vertical;
+      }
+    }
+  }
+  
+  .settings-actions {
+    @include flex(row, flex-end, center);
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    
+    .modal-cancel {
+      padding: 0.65rem;
+      background-color: transparent;
+      border: 1px solid $accent-color;
+      border-radius: 0.25rem;
+      color: $accent-color;
+      font-size: 1rem;
+      cursor: pointer;
+      
+      &:hover {
+        background-color: rgba($accent-color, 0.1);
+      }
+    }
   }
 }
 
