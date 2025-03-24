@@ -113,11 +113,27 @@ main {
   }
 
   /* Sidebar header styling */
-  h1 {
-    font-size: 2rem;
+  header {
     @include flex(row, space-between, center);
     gap: 0.625rem;
     width: 100%;
+
+    .title{
+      @include flex(row, flex-start, center);
+      gap: 0.5rem;
+    }
+
+    h1{
+      font-size: 2rem;
+    }
+
+    a{
+      color: $accent-color;
+      text-decoration: none;
+      font-size: 1rem;
+      padding-top: 0.25rem;
+      margin-left: 1rem;
+    }
 
     .settings-btn {
       cursor: pointer;

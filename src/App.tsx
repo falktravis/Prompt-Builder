@@ -1087,12 +1087,17 @@ const Sidebar: React.FC<SidebarProps> = ({ treeData, setTreeData, openSettings }
   return (
     <>
       <div id="sidebar-container" onDragOver={(e) => e.preventDefault()} onDrop={handleFileDrop}>
-        <h1>
-          Prompt Builder
+        <header>
+          <div className="title">
+            <h1>
+              Prompt Builder
+            </h1>
+            <a href="https://docs.google.com/document/d/1eql1d57SB1DtiW8bkQswjnqmxsSl6Ken-96tjSLdG9k/edit?tab=t.0" target="_blank">Guide</a>
+          </div>
           <button className="settings-btn" onClick={openSettings}>
             <SettingsIcon fontSize="inherit" />
           </button>
-        </h1>
+        </header>
         <div className="tree">{renderTree(treeData)}</div>
         {modalOpen && (
           <ModalDialog
@@ -1467,21 +1472,6 @@ const App: React.FC = () => {
     console.log("Switched to prompt:", promptId);
   };
 
-  const handleTextareaFocus = () => {
-    // If we have a wrapper reference, save its current scroll position
-    if (wrapperRef.current) {
-      const currentScrollTop = wrapperRef.current.scrollTop;
-      
-      // Use setTimeout to let the browser's default focus behavior happen first
-      setTimeout(() => {
-        // Then restore the scroll position
-        if (wrapperRef.current) {
-          wrapperRef.current.scrollTop = currentScrollTop;
-        }
-      }, 0);
-    }
-  };
-
   // ----- MAIN APP RENDER -----
   return (
     <main>
@@ -1606,15 +1596,9 @@ const App: React.FC = () => {
                 value={sec.content}
                 onChange={(e) => updateSectionContent(sec.id, e.target.value)}
                 onKeyDown={(e) => handleSectionKeyDown(e, sec, index)}
-                onFocus={handleTextareaFocus}
                 placeholder="Enter section content..."
                 ref={(el) => {
                   if (el) sectionRefs.current[sec.id] = el;
-                }}
-                onInput={(e) => {
-                  const ta = e.currentTarget;
-                  ta.style.height = "auto";
-                  ta.style.height = ta.scrollHeight + "px";
                 }}
               ></textarea>
               )}
