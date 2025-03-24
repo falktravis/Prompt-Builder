@@ -3,6 +3,9 @@ The Modular Prompting Tool - Drag, drop, and assemble reusable prompt components
 
 ![Demo Video](Demo.gif)
 
+## Component Prompting Documenation
+https://docs.google.com/document/d/1eql1d57SB1DtiW8bkQswjnqmxsSl6Ken-96tjSLdG9k/edit?tab=t.0
+
 ## Install the Chrome Extension 🛠️
 1. Clone this Repository or Directly download the _dist_ folder
 2. Open Chrome and navigate to chrome://extensions.
