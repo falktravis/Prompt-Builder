@@ -1,0 +1,16 @@
+[
+    {
+      "children": [
+        {
+            "componentType": "instruction",
+            "content": "Your job, is to fix this bug. Start by identifying the source of the error, then identify the intended functionality, finally, fix the root of the problem. Make sure that you do not remove any core functionality in the process.",
+            "id": 1742249144444,
+            "name": "Debug",
+            "type": "component"
+        }
+      ],
+      "id": 1,
+      "name": "Components",
+      "type": "folder"
+    }
+]

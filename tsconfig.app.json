@@ -22,5 +22,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src", "utils", "src/hooks", "src/contexts", "src/componentssrc/types.tss.ts"]
 }

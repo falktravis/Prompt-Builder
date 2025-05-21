@@ -1,0 +1,16 @@
+[
+    {
+      "children": [
+        {
+            "componentType": "instruction",
+            "content": "When completing this request, if there is any information or additional context that you need from me, you should start by asking those questions before giving your answer. You should continue to ask questions until absolutely sure you have all the necessary context/information.",
+            "id": 1740359000714,
+            "name": "Ask Questions",
+            "type": "component"
+        }
+      ],
+      "id": 1,
+      "name": "Components",
+      "type": "folder"
+    }
+]

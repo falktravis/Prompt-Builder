@@ -1,0 +1,399 @@
+/**
+ * Modal styles
+ */
+
+@import "../../styles/variables/colors";
+@import "../../styles/variables/typography";
+@import "../../styles/variables/mixins";
+
+/* Modal overlay for Add/Edit Component screens */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+/* Modal content container */
+.modal-content {
+  background-color: #333;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  width: 65vw;
+  overflow-y: auto;
+  @include custom-scrollbar();
+  position: relative;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid $dark-gray;
+
+  h3 {
+    margin: 0;
+    font-size: $font-size-xl;
+    font-weight: 600;
+    color: $text-color;
+  }
+}
+
+.modal-body {
+  padding: 1rem;
+}
+
+/* Error message styling */
+.error-message {
+  color: #ff6b6b;
+  background-color: rgba(255, 107, 107, 0.1);
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+/* Form input styling */
+label {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: $text-color;
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.form-group{
+  width: 97%;
+  margin: auto;
+  position: relative;
+}
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+  padding: 0.75rem;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  font-family: $primary-font;
+  background-color: #555;
+  border: 1px solid #777;
+  color: $text-color;
+  border-radius: 0.25rem;
+
+  &:focus {
+    border-color: $accent-color;
+    outline: none;
+  }
+}
+
+input[type="text"],
+input[type="number"],
+textarea{
+  width: calc(100% - 1.5rem);
+}
+
+select{
+  width: 100%;
+}
+
+textarea {
+  resize: none;
+  min-height: 200px;
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+small {
+  display: block;
+  color: $light-gray;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+/* Form action buttons */
+.form-actions {
+  @include flex(row, flex-end, center);
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  width: 97%;
+  margin: auto;
+
+  button{
+    @include btn();
+  }
+  
+  .primary {
+    background-color: transparent;
+    border: 1px solid $accent-color;
+    border-radius: 0.25rem;
+    color: $accent-color;
+    font-size: 1rem;
+    cursor: pointer;
+    
+    &:hover {
+      background-color: rgba($accent-color, 0.1);
+    }
+  }
+}
+
+/* Modal close button styling */
+.modal-close {
+  @include btn();
+  width: 32px;
+  height: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  background-color: transparent;
+  color: $light-gray;
+  
+  &:hover {
+    color: $text-color;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Component modal specific styles */
+.component-modal textarea {
+  font-family: monospace;
+}
+
+/* Settings modal specific styles */
+.settings-modal input[type="checkbox"] {
+  margin-bottom: 1rem;
+}
+
+.settings-modal{
+  width: 45%;
+
+  h4 {
+    margin-bottom: 0.15rem;
+    color: $accent-color;
+    font-size: 1.5rem;
+    margin-top: 0.25rem;
+  }
+
+  p{
+    margin-bottom: 0.5rem;
+    color: $light-gray;
+    font-size: 1rem;
+
+    a{
+      color: #089ad9;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  }
+  
+  label {
+    display: block;
+    margin: 0.75rem 0;
+    
+    input, select {
+      width: 100%;
+      margin-top: 0.375rem;
+    }
+  }
+  
+  .settings-toggle {
+    @include flex(row, space-between, center);
+  }
+  
+  .settings-toggle {
+    @include flex(row, space-between, center);
+    margin: 1rem 0;
+  }
+    
+  .system-prompt-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+    margin-top: 1.5rem;
+    
+    label {
+      margin: 0;
+    }
+    
+    .reset-default-btn {
+      color: $light-gray;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.8rem;
+      margin-left: 0.5rem;
+      cursor: pointer;
+    }
+  }
+}
+
+.reset-btn {
+  @include btn();
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.community-components-modal {
+  .modal-content{
+    width: 70vw;
+    max-width: 900px;
+  }
+
+  .modal-body {
+    height: 75vh;
+    overflow-y: scroll;
+  }
+
+  .library-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .library-file-item {
+    background-color: lighten($dark-gray, 5%);
+    border-radius: 4px;
+    border: 1px solid darken($dark-gray, 5%);
+
+    .file-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 0.75rem 1rem;
+      background-color: lighten($dark-gray, 8%);
+      border-bottom: 1px solid darken($dark-gray, 5%);
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
+
+      .file-header-tree-view {
+        flex-grow: 1;
+        overflow: hidden;
+        margin-right: 0.5rem;
+
+        .simple-tree-view {
+          font-size: 0.85rem;
+
+          .simple-tree-node {
+            padding: 0.1rem 0.3rem;
+            margin-bottom: 0.1rem;
+
+            .simple-tree-node-header {
+              padding: 0.15rem 0;
+            }
+          }
+        }
+      }
+      
+      .file-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        align-self: flex-start;
+        padding-top: 0.1rem;
+      }
+
+      .import-button {
+        @include btn();
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+        background-color: $accent-color;
+        border: none;
+        border-radius: 2px;
+
+        &:hover {
+          background-color: darken($accent-color, 10%);
+        }
+
+        &.importing {
+          background-color: $dark-gray;
+          cursor: default;
+        }
+
+        &.imported {
+          background-color: $success-color;
+          display: flex;
+          flex-direction: row-reverse;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+        }
+      }
+    }
+  }
+
+  .manifest-error,
+  .file-error {
+    color: $error-color;
+    background-color: rgba($error-color, 0.1);
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+}
+
+// Styles for SimpleTreeView (can be co-located or separate)
+.simple-tree-view {
+  .simple-tree-node {
+    padding: 0.15rem 0.5rem;
+    font-size: 1.05rem;
+    color: $text-color;
+    border-radius: 4px;
+    margin-bottom: 0.2rem;
+
+    &.component{
+      &:hover {
+        background-color: $hover-gray;
+      }
+    }
+
+    .simple-tree-node-header {
+      display: flex;
+      align-items: center;
+      padding: 0.25rem 0;
+
+      &.component-header {
+        cursor: pointer;
+      }
+    }
+
+    .simple-tree-node-icon {
+      margin-right: 0.5rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .simple-tree-node-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    .component-content-details {
+      background-color: lighten($dark-gray, 3%);
+      color: $light-gray;
+      padding: 0.5rem 0.75rem;
+      margin: 0.25rem 0;
+      border-radius: 2px;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      border: 1px solid darken($dark-gray, 3%);
+      overflow-y: auto;
+      @include custom-scrollbar();
+    }
+  }
+  // Nested tree view styling is handled by padding in the component jsx
+}

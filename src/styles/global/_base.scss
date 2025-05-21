@@ -1,0 +1,90 @@
+/**
+ * Base global styles
+ */
+
+ @import "../variables/colors";
+ @import "../variables/typography";
+ @import "../variables/mixins";
+ 
+ /* Global base styles using :root for page-level defaults */
+ :root {
+   font-size: $base-font-size;
+   font-family: $primary-font;
+   line-height: $line-height-base;
+   color: $text-color;
+   background-color: $bg-color;
+ 
+   /* Set transition defaults */
+   --transition-speed: 0.2s;
+   --transition-fn: ease;
+
+   body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+  }
+ }
+ 
+ /* Global focus styles */
+ *:focus-visible {
+   outline: 2px solid $accent-color;
+   outline-offset: 2px;
+ }
+ 
+ /* Basic typography */
+ h1, h2, h3, h4, h5, h6 {
+   font-weight: $font-weight-bold;
+   line-height: $line-height-tight;
+   margin-bottom: 0.5em;
+ }
+ 
+ h1 { font-size: $font-size-2xl; }
+ h2 { font-size: $font-size-xl; }
+ h3 { font-size: $font-size-lg; }
+ h4 { font-size: $font-size-md; }
+ h5, h6 { font-size: $font-size-sm; }
+ 
+ p {
+   margin-bottom: 1em;
+ }
+ 
+ /* Links */
+ a {
+   color: $accent-color;
+   transition: color var(--transition-speed) var(--transition-fn);
+ 
+   &:hover {
+     color: lighten($accent-color, 10%);
+   }
+ }
+ 
+ /* Code blocks */
+ pre, code {
+   font-family: $monospace-font;
+   background-color: rgba(0, 0, 0, 0.2);
+   padding: 0.2em 0.4em;
+   border-radius: 3px;
+ }
+ 
+ pre {
+   padding: 1rem;
+   overflow-x: auto;
+   margin: 1rem 0;
+   
+   code {
+     padding: 0;
+     background-color: transparent;
+   }
+ }
+ 
+ /* Selection styling */
+ ::selection {
+   background-color: rgba($accent-color, 0.3);
+   color: $text-color;
+ }
+
+ /* Global dragging cursor style */
+ body.is-dragging-something,
+ body.is-dragging-something * {
+   cursor: grabbing !important;
+ }

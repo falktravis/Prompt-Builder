@@ -1,0 +1,16 @@
+[
+    {
+      "children": [
+        {
+            "componentType": "instruction",
+            "content": "You have tried to solve this issue over and over again. All of your previous solutions have not worked. You need to take a big step back and identify the root of the issue. Explain the problem in depth, then think about possible elegant solutions. You might have to completely restructure and take a new view of the intended functionality.\n\nSearch for any packages or functionality that could help us in solving this. Take your time and go really deep on this issue. It is absolutely critical that we solve this issue.",
+            "id": 1744762306152,
+            "name": "Debug Roadblock",
+            "type": "component"
+        }
+      ],
+      "id": 1,
+      "name": "Components",
+      "type": "folder"
+    }
+]

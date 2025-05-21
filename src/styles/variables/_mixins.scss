@@ -1,0 +1,106 @@
+/**
+ * SCSS mixins for common patterns
+ */
+
+// Import color variables for use in mixins
+@import "./colors";
+
+/**
+ * Flexbox mixin for consistent layout
+ * @param {String} $direction - flex-direction (default: row)
+ * @param {String} $justify - justify-content (default: flex-start)
+ * @param {String} $align - align-items (default: center)
+ * @param {String} $wrap - flex-wrap (default: nowrap)
+ */
+@mixin flex($direction: row, $justify: flex-start, $align: center, $wrap: nowrap) {
+  display: flex;
+  flex-direction: $direction;
+  justify-content: $justify;
+  align-items: $align;
+  flex-wrap: $wrap;
+}
+
+/**
+ * Button styling mixin
+ * @param {Length} $radius - border-radius value (default: 0.25rem)
+ */
+@mixin btn() {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: none;
+  color: $text-color;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1;
+  text-align: center;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+  
+  &:active {
+    transform: translateY(1px);
+  }
+  
+  &:focus {
+    outline: none;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/**
+ * Custom scrollbar styling
+ * @param {Length} $width - scrollbar width (default: 8px)
+ * @param {Color} $thumb-color - scrollbar thumb color (default: #dadada)
+ */
+@mixin custom-scrollbar($width: 8px, $thumb-color: #dadada) {
+  &::-webkit-scrollbar {
+    width: $width;
+    height: $width;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: $width / 2;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: $thumb-color;
+    border-radius: $width / 2;
+    
+    &:hover {
+      background-color: darken($thumb-color, 10%);
+    }
+  }
+  
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: $thumb-color rgba(0, 0, 0, 0.1);
+}
+
+/**
+ * Truncate text with ellipsis
+ */
+@mixin truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/**
+ * Box shadow sets
+ * @param {Number} $level - shadow intensity level (1-4)
+ */
+@mixin shadow($level: 1) {
+  @if $level == 1 {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  } @else if $level == 2 {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  } @else if $level == 3 {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  } @else if $level == 4 {
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+  }
+}

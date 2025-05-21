@@ -1,0 +1,30 @@
+[
+    {
+      "children": [
+        {
+            "children": [
+              {
+                "componentType": "format",
+                "content": "When making modifications, output only the updated snippets(s) in a way that can be easily copied and pasted directly into the target file with no modifications.\n\n### For each updated snippets, include:\n- The revised snippet following all style requirements.\n- A concise explanation of the change made.\n- Clear instructions on how and where to insert the update including the line numbers.\n\n### Do not include:\n- Unchanged blocks of code\n- Abbreviated blocks of current code\n- Comments not in the context of the file",
+                "id": 1740353447727,
+                "name": "Output Functions",
+                "type": "component"
+              },
+              {
+                "componentType": "format",
+                "content": "For each requested change, you should start by identifying the function that you need to update. Then, you should make the necessary updates to that function independently of the rest of the code. Finally, you should compile all of those updated functions back into the original file.\n\nYou should output the entire updated file, completely compiled with the new changes. Take your time and make sure that you do not remove any of the current or indented functionality when you make these changes and compile the output.",
+                "id": 1740233719984,
+                "name": "Output File",
+                "type": "component"
+              }
+            ],
+            "id": 1740416987005,
+            "name": "Development Output Formats",
+            "type": "folder"
+        }
+      ],
+      "id": 1,
+      "name": "Components",
+      "type": "folder"
+    }
+]

@@ -1,0 +1,424 @@
+/**
+ * PromptEditor component styles
+ */
+
+ @import "../../styles/variables/colors";
+ @import "../../styles/variables/mixins";
+  @import "../../styles/variables/typography";
+ 
+ // Main content area
+ #content {
+   flex: 1;
+   display: flex;
+   flex-direction: column;
+   overflow: hidden;
+   
+   
+   // Empty state when no prompts are available
+   .empty-state {
+     @include flex(column, center, center);
+     height: 100%;
+     
+     p {
+       margin-bottom: 1rem;
+       color: $light-gray;
+     }
+     
+     button {
+       @include btn();
+       padding: 0.75rem 1.5rem;
+       background-color: $accent-color;
+       color: black;
+       font-weight: 500;
+       
+       &:hover {
+         background-color: darken($accent-color, 10%);
+       }
+     }
+   }
+   
+   // Tabs navigation
+   .prompt-tabs {
+     @include flex(row, flex-start, center);
+     border-bottom: 1px solid $dark-gray;
+     overflow-x: auto;
+     @include custom-scrollbar(6px, $dark-gray);
+     background-color: rgba($side-bar-bg, 1);
+     
+     .prompt-tab {
+       @include flex(row, space-between, center);
+       padding: 0.2rem 0;
+       padding-left: 0.75rem;
+       cursor: pointer;
+       min-width: 120px;
+       max-width: 200px;
+       transition: background-color 0.2s ease;
+       font-size: $font-size-sm;
+       position: relative;
+       overflow: visible;
+
+       &::before {
+         content: "";
+         display: block;
+         width: 1.5px;
+         height: 70%;
+         background-color: $light-gray;
+         position: absolute;
+         left: 0;
+         border-radius: 2px;
+       }
+       
+       &:hover {
+         background-color: rgba(0, 0, 0, 0.3);
+       }
+
+       &.next-tab{
+        &::before {
+          display: none;
+        }
+       }
+       
+       &.active {
+         background-color: rgba($accent-color, 0.1);
+         border-bottom: 2px solid $accent-color;
+
+         &::before {
+          display: none;
+        }
+       }
+       
+       .prompt-name {
+         flex: 1;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         white-space: nowrap;
+         padding-right: 0.5rem;
+       }
+       
+       .tab-actions {
+         @include flex(row, flex-end, center);
+         margin-left: 0.5rem;
+         
+         .action-btn {
+           @include btn();
+           padding: 0.25rem;
+           font-size: 0.9rem;
+           
+           &:hover {
+             opacity: 1;
+           }
+           
+           &:first-child {
+             margin-right: 0.25rem;
+           }
+         }
+       }
+       
+       input {
+         width: 100%;
+         padding: 0.25rem;
+         background-color: rgba(0, 0, 0, 0.3);
+         border: 1px solid $dark-gray;
+         border-radius: 3px;
+         color: $text-color;
+         
+         &:focus {
+           outline: none;
+           border-color: $accent-color;
+         }
+       }
+     }
+     
+     .prompt-tab-actions{
+        position: relative;
+        margin-left: 0.75rem;
+        height: 100%;
+        display: flex;
+        align-items: center;
+
+        &::before {
+          content: "";
+          display: block;
+          width: 1.5px;
+          height: 70%;
+          background-color: $light-gray;
+          position: absolute;
+          left: -0.35rem;
+          top: 50%;
+          transform: translateY(-50%);
+          border-radius: 2px;
+        }
+        
+        .add-prompt-tab,
+        .duplicate-prompt-tab {
+          @include flex(row, center, center);
+          border-radius: 6px;
+          background-color: rgba(0, 0, 0, 0.3);
+          cursor: pointer;
+          padding: 0.3rem 0.3rem;
+          
+          &:hover {
+            background-color: rgba(0, 0, 0, 0.4);
+          }
+
+          svg {
+            font-size: 1.25rem;
+            display: block;
+          }
+        }
+
+        .duplicate-prompt-tab {
+          margin-left: 0.35rem;
+        }
+     }
+   }
+   
+   // Main Prompt Title Container
+   .prompt-main-title-container {
+    padding: 0 1.5rem; // Align with sections-container horizontal padding
+  
+    .prompt-main-title-display {
+      font-size: $font-size-xl;
+      font-weight: 600;
+      color: $text-color;
+      cursor: text;
+      padding: 0.3rem 0.5rem;
+      margin: 0.7rem 0;
+      border-radius: 2px; 
+      transition: background-color 0.2s ease;
+      display: inline-block; // To prevent full width and allow padding to work as expected
+      font-family: 'Open Sans';
+  
+      &:hover {
+        background-color: rgba($text-color, 0.1); // Subtle hover effect
+      }
+    }
+  
+    .prompt-main-title-input {
+      font-size: $font-size-xl; 
+      font-weight: 600;      
+      color: $text-color;
+      background-color: transparent;
+      border: none;
+      border-radius: 4px;
+      border: 2px solid $text-color; 
+      outline: none;
+      width: 100%; // Take full width of its container
+      padding: 0.3rem calc(0.5rem - 2px);
+      margin: calc(0.7rem - 4px) 0;
+      box-sizing: border-box;
+      font-family: 'Open Sans';
+    }
+  }
+   
+   // Sections container
+   .sections-container {
+     flex: 1;
+     overflow-y: auto;
+     @include custom-scrollbar();
+     padding-right: 0.5rem;
+     padding: 1.5rem;
+     padding-top: 0.5rem;
+     position: relative; // Added for insertion indicator positioning
+
+     .context { &::before{ background-color: $context-color; } }
+     .format { &::before{ background-color: $format-color; } }
+     .instruction { &::before{ background-color: $instruction-color; } }
+     .role { &::before{ background-color: $role-color; } }
+     .style { &::before{ background-color: $style-color; } }
+
+     .section{
+      position: relative;
+      margin-bottom: 0.5rem;
+
+      &::before{
+        content: '';
+        width: 0.3rem;
+        border-radius: 0.15rem;
+        height: 100%;
+        position: absolute;
+        left: -0.75rem;
+        top: 0;
+      }
+
+      .section-drag-handle {
+        position: absolute;
+        left: -1rem;
+        top: 0;
+        width: 1rem;
+        height: 100%;
+        cursor: grab;
+        z-index: 1;
+      }
+
+      .section-header{
+        @include flex(row, space-between, center);
+        color: $light-gray;
+        font-size: 1.1rem;
+        cursor: pointer;
+
+        .section-info{
+          @include flex(row, flex-start, center);
+          flex-grow: 1;
+          min-width: 0;
+
+          .section-toggle{
+            @include flex(row, center, center);
+            width: 1.5rem;
+            height: 1.5rem;
+            margin-right: 0.5rem;
+            
+          }
+
+          .section-edit{
+            @include flex(row, center, center);
+            
+            select, input{
+              height: 100%;
+              font-size: 1.1rem;
+              padding: 0;
+              margin: 0;
+              border-radius: 0;
+              background: transparent;
+              border: none;
+              outline: none;
+              color: $light-gray;
+              width: fit-content;
+              cursor: pointer;
+            }
+
+            input{
+              margin-right: 0.3rem;
+              border-bottom: 1px solid $accent-color;
+              cursor: text;
+              min-width: 100px;
+              box-sizing: border-box;
+            }
+          }
+
+          .section-display{
+            @include flex(row, center, center);
+          }
+        }
+
+        .delete-btn{
+          color: $light-gray;
+
+          &:hover{
+            color: $text-color;
+          }
+        }
+      }
+
+      .section-content{
+        /* Editable section input area */
+        .section-input {
+          width: 100%;
+          background: transparent;
+          border: none;
+          outline: none;
+          color: $text-color;
+          font-size: 1.25rem;
+          line-height: 1.25rem;
+          resize: none;
+          overflow: hidden;
+          font-family: $primary-font;
+          min-height: 0;
+          padding: 0.25rem;
+          padding-bottom: 0;
+          margin: 0;
+          margin-top: 0.25rem;
+        }
+        /* Save button for a section */
+        .section-save-btn {
+          position: absolute;
+          right: 2rem;
+          top: auto;
+          background-color: $accent-color;
+          border: none;
+          border-radius: 0.25rem;
+          padding: 0.125rem 0.5rem;
+          font-size: 1rem;
+          cursor: pointer;
+        }
+
+        .linked-component-indicator {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 0.75rem;
+
+          span{
+            color: #aaa; // Lighter text color for the indicator
+            border-top: 1px solid rgba(255, 255, 255, 0.1); // Separator line
+            background-color: rgba(255, 255, 255, 0.05); // Subtle background for the indicator bar
+            padding: 0.25rem 0.5rem;
+          }
+
+          .save-to-library-btn {
+            margin-left: 10px;
+            padding: 3px 8px; // Adjusted padding
+            background-color: #08D9D6; // Accent color from old-App.scss
+            color: #1e1e2f; // Dark background color for text, for contrast
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem; // Slightly smaller font size
+            font-weight: bold;
+
+            &:hover {
+              background-color: lighten(#08D9D6, 10%); // Lighter accent color on hover
+            }
+          }
+        }
+      }
+     }
+     
+     // Insertion indicator for drag and drop
+     .insertion-indicator {
+      position: absolute;
+      left: 0.75rem; // To align with section content, considering padding of sections-container
+      width: calc(100% - 1.5rem); // Adjust width considering padding
+      height: 2px;
+      background-color: $accent-color;
+      pointer-events: none;
+      z-index: 10;
+      transition: top 0.1s ease-out;
+    }
+   }
+
+  // Action bar
+  .action-bar {
+    @include flex(row, flex-start, center);
+    margin-bottom: 0.5rem;
+    padding: 0 1rem;
+    
+    .copy-btn,
+    .new-section-btn, // Added new-section-btn
+    .copy-with-system-btn {
+      @include btn();
+      @include flex(row, center, center);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      background-color: $dark-gray;
+      margin-right: 1rem;
+      
+      &:hover {
+        background-color: $hover-gray;
+      }
+      
+      svg {
+        margin-right: 0.5rem;
+      }
+    }
+    
+    .format-indicator {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: $light-gray;
+      padding: 0.5rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+  }
+ }
