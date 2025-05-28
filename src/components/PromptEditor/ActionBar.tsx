@@ -44,26 +44,29 @@ const ActionBar: React.FC<ActionBarProps> = ({
 
   return (
     <div className="action-bar">
-      <button
-        className="copy-btn"
-        onClick={copyPrompt}
-        title="Copy Prompt"
-      >
-        <ContentCopyIcon />
-        <span>Copy Prompt</span>
-      </button>
+      <div className="action-bar-buttons-group">
+        <button
+          className="copy-btn"
+          onClick={copyPrompt}
+          title="Copy Prompt"
+        >
+          <ContentCopyIcon />
+          <span>Copy Prompt</span>
+        </button>
 
-      <button
-        className="new-section-btn" // Added class for styling
-        onClick={handleAddNewSection}
-        title="Add New Section"
-      >
-        <AddIcon /> {/* Optional: Icon for the button */}
-        <span>New Section</span>
-      </button>
-      
-      <div className="format-indicator">
-        {markdownEnabled ? "Markdown Format Enabled" : "Plain Text Format"}
+        <button
+          className="new-section-btn"
+          onClick={handleAddNewSection}
+          title="Add New Section"
+        >
+          <AddIcon />
+          <span>New Section</span>
+        </button>
+      </div>
+      <div className="deprecation-message">
+        <p>This version of Prompt Builder has been <strong>deprecated</strong>. Please save your components and migrate to the (completely free) centralized version on our website.</p>
+        <a href="https://github.com/falktravis/Prompt-Builder/discussions/5" target="_blank" rel="noopener noreferrer" id="more-info">More Info</a>
+        <a href="https://buildprompts.ai" target="_blank" rel="noopener noreferrer" id="new-version">New Version</a>
       </div>
     </div>
   );

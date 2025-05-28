@@ -387,21 +387,27 @@
     }
    }
 
-  // Action bar
-  .action-bar {
-    @include flex(row, flex-start, center);
-    margin-bottom: 0.5rem;
-    padding: 0 1rem;
-    
-    .copy-btn,
-    .new-section-btn, // Added new-section-btn
-    .copy-with-system-btn {
+   // Action bar
+   .action-bar {
+     @include flex(row, space-between, center); // Changed from flex-start to space-between
+     margin-bottom: 0.5rem;
+     padding: 0 1rem;
+
+      .action-bar-buttons{
+        @include flex(row, center, center);
+        gap: 0.5rem;
+      }
+     
+     .copy-btn,
+     .new-section-btn, // Added new-section-btn
+     .copy-with-system-btn {
       @include btn();
       @include flex(row, center, center);
       padding: 0.5rem 1rem;
       border-radius: 4px;
       background-color: $dark-gray;
       margin-right: 1rem;
+      text-wrap: nowrap; // Prevent text wrapping
       
       &:hover {
         background-color: $hover-gray;
@@ -411,14 +417,46 @@
         margin-right: 0.5rem;
       }
     }
-    
-    .format-indicator {
-      margin-left: auto;
-      font-size: 0.85rem;
-      color: $light-gray;
-      padding: 0.5rem;
-      background-color: rgba(0, 0, 0, 0.2);
+
+    .deprecation-message {
+      @include flex(row, center, center); // Align paragraph and links
+      padding: 1rem; // Adjusted padding
+      background-color: rgba(0, 0, 0, 0.2); // Similar to auth-reminder
       border-radius: 4px;
+      color: $light-gray; // Use variable for light gray
+      font-size: 1rem; // Similar to auth-reminder
+      gap: 0.75rem; // Space between p and a tags, and between a tags
+
+      p {
+        margin: 0; // Remove default paragraph margin
+      }
+
+      #more-info {
+        color: $accent-color; // Use accent color for links, or a specific link color variable if available
+        text-decoration: underline;
+        text-wrap: nowrap; // Prevent text wrapping
+        margin-right: 1rem;
+
+        &:hover {
+          color: darken($accent-color, 10%); // Darken on hover
+        }
+      }
+
+      #new-version {
+        color: $accent-color;
+        text-decoration: none;
+        border-radius: 5px;
+        border: 2px solid $accent-color;
+        box-shadow: $accent-color 0px 0px 20px 0px;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+        padding: 0.5rem 1rem;
+        white-space: nowrap;
+
+        &:hover {
+          box-shadow: $accent-color 0px 0px 30px 0px; // Slightly larger shadow on hover
+          transform: scale(1.05); // Slightly enlarge on hover
+        }
+      }
     }
+   }
   }
- }
