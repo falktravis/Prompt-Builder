@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * ComponentModal
  * Modal for adding and editing components

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * CommunityComponentsModal.tsx
  * Modal for browsing and importing components from a shared library.
@@ -7,28 +9,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ModalBase from './ModalBase';
 import SimpleTreeView from './SimpleTreeView';
-import { useAppContext } from '../../contexts/AppContext';
-import { useTreeContext } from '../../contexts/TreeContext';
-import { FolderType, TreeNode } from '../../types';
-import { mergeTreeData } from '../../utils/treeUtils';
+import { useAppContext } from '@/contexts/AppContext';
+import { useTreeContext } from '@/contexts/TreeContext';
+import { FolderType, ComponentType } from '@/types'; // Removed TreeNode
+import { mergeTreeData } from '@/utils/treeUtils';
+import { v4 as uuidv4 } from 'uuid'; // Added for generating string IDs
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
-// Helper function to get resource URL
-const getResourceURL = (relativePath: string): string => {
-  if (chrome && chrome.runtime && chrome.runtime.getURL) {
-    try {
-      return chrome.runtime.getURL(relativePath);
-    } catch (e) {
-      // Fallback for environments where chrome.runtime.getURL exists but throws (e.g., some test environments)
-      console.warn("chrome.runtime.getURL failed, falling back to relative path:", e);
-      return `/${relativePath}`;
-    }
-  } 
-  // Fallback for development environment or when chrome API is not available
-  return `/${relativePath}`;
-};
+// Define getResourceURL for Next.js environment
+const getResourceURL = (path: string) => `/${path}`;
 
 interface LibraryFile {
   name: string;
@@ -40,21 +31,63 @@ interface LibraryFile {
 
 const CommunityComponentsModal: React.FC = () => {
   const { isCommunityModalOpen, setCommunityModalOpen } = useAppContext();
-  const { treeData, setTreeData } = useTreeContext();
+  const { treeData, setTreeData } = useTreeContext(); // treeData is FolderType[]
   const [libraryFiles, setLibraryFiles] = useState<LibraryFile[]>([]);
   const [manifestError, setManifestError] = useState<string | null>(null);
 
-  // Simplified parser for library files (array of FolderType)
+  const validComponentTypes = ["instruction", "role", "context", "format", "style"];
+
+  // Helper function to assign new UUIDs to library nodes
+  const processNodeForLibrary = (node: any): FolderType | ComponentType => {
+    if (!node || typeof node !== 'object' || !node.type || typeof node.name !== 'string') {
+      console.error(`[CommunityModal|processNodeForLibrary] Invalid node structure. Node data:`, node);
+      const name = (node && typeof node.name === 'string') ? node.name : 'Unnamed Node';
+      throw new Error(`Invalid node structure for "${name}": Missing type, or node is not an object.`);
+    }
+
+    const newId = uuidv4();
+
+    if (node.type === 'folder') {
+      if (!Array.isArray(node.children)) {
+        node.children = [];
+      }
+      return {
+        id: newId,
+        name: node.name,
+        type: "folder",
+        children: node.children.map((child: any) => processNodeForLibrary(child)),
+      } as FolderType;
+    } else if (node.type === 'component') {
+      const content = typeof node.content === 'string' ? node.content : "";
+      let componentType = node.componentType;
+      if (!validComponentTypes.includes(componentType)) {
+        componentType = "context";
+      }
+      return {
+        id: newId,
+        name: node.name,
+        type: "component",
+        content: content,
+        componentType: componentType,
+      } as ComponentType;
+    } else {
+      console.error(`[CommunityModal|processNodeForLibrary] Unknown node type: "${node.type}" for node "${node.name}"`);
+      throw new Error(`Unknown node type: "${node.type}" for node "${node.name}"`);
+    }
+  };
+
+  // Updated parser for library files to assign string UUIDs
   const parseLibraryFileData = (data: any): FolderType[] => {
     if (Array.isArray(data)) {
-      // Basic validation: check if it looks like an array of FolderType
-      const isValid = data.every(
-        (item) => item && typeof item === 'object' && item.type === 'folder' && item.name && Array.isArray(item.children)
-      );
-      if (isValid) {
-        return data as FolderType[];
+      try {
+        // Process each root node (expected to be a folder)
+        return data.map(item => processNodeForLibrary(item) as FolderType);
+      } catch (error) {
+        console.error('[CommunityModal|parseLibraryFileData] Error processing library data:', error);
+        throw new Error(`Failed to parse library file: ${(error as Error).message}`);
       }
     }
+    console.error('[CommunityModal|parseLibraryFileData] Invalid library file format. Expected an array. Data:', data);
     throw new Error('Invalid library file format. Expected an array of folders.');
   };
 
@@ -135,11 +168,12 @@ const CommunityComponentsModal: React.FC = () => {
     try {
       let contentToImport = fileToImport.content;
       if (!contentToImport) {
-        // Fetch content if not already loaded (should ideally be loaded on expand)
+        // Fetch content if not already loaded
         const fileUrl = getResourceURL(`library/${fileName}`);
         const response = await fetch(fileUrl);
         if (!response.ok) throw new Error(`Failed to fetch ${fileName} for import.`);
         const data = await response.json();
+        // Ensure fetched data is also processed for correct IDs
         contentToImport = parseLibraryFileData(data);
       }
 
@@ -147,25 +181,12 @@ const CommunityComponentsModal: React.FC = () => {
         throw new Error('File content is not available for import.');
       }
 
+      // contentToImport should now have string UUIDs from parseLibraryFileData
       setTreeData(currentTreeData => {
-        let maxExistingId = 0;
-        const findMaxId = (nodes: TreeNode[]): void => {
-          for (const node of nodes) {
-            maxExistingId = Math.max(maxExistingId, node.id);
-            if (node.type === 'folder') {
-              findMaxId(node.children);
-            }
-          }
-        };
-        findMaxId(currentTreeData);
-
-        let nextIdCounter = Math.max(Date.now(), maxExistingId + 1);
-        const generateId = (): number => {
-          const newId = nextIdCounter;
-          nextIdCounter += 1;
-          return newId;
-        };
-        return mergeTreeData(currentTreeData, contentToImport as FolderType[], generateId);
+        // Numeric ID generation logic (maxExistingId, findMaxId, nextIdCounter, generateId) is removed.
+        // contentToImport (FolderType[]) already has string UUIDs.
+        // Pass uuidv4 to mergeTreeData for any new structural nodes it might create.
+        return mergeTreeData(currentTreeData, contentToImport, uuidv4);
       });
 
       setLibraryFiles(prevFiles =>

@@ -1,0 +1,52 @@
+/**
+ * MenuBar component styles
+ */
+
+#menu-bar {
+  width: 50px;
+  height: 100%;
+  background-color: colors.$side-bar-bg;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative; // Needed for absolute positioning of profile menu
+
+  .menu-button { // Updated class name
+    background-color: transparent;
+    border: none;
+    color: colors.$text-color;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    border-radius: 4px;
+    width: calc(100% - 1rem); // Make button slightly smaller than bar
+    max-width: 36px; // Ensure buttons don't get too wide if bar width changes
+    aspect-ratio: 1 / 1; // Make them square
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s ease;
+    box-sizing: border-box; // ADD THIS LINE
+
+    img{
+        width: 20px; // Adjust icon size
+        height: 20px; // Adjust icon size
+        transition: transform 0.2s ease;
+    }
+
+    &:hover {
+      background-color: colors.$hover-gray;
+    }
+  }
+
+  .profile-section {
+    position: relative; // Container for the button and menu
+    margin-top: auto; // Pushes the profile button to the bottom
+    width: 100%; // Ensure it takes full width for centering button
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 0.5rem; // Space at the very bottom
+  }
+}

@@ -1,18 +1,18 @@
 /**
  * Base global styles
  */
-
- @import "../variables/colors";
- @import "../variables/typography";
- @import "../variables/mixins";
+@use "sass:color";
+@use "../variables/colors" as colors;
+@use "../variables/typography" as typography;
+@use "../variables/mixins" as mixins;
  
  /* Global base styles using :root for page-level defaults */
  :root {
-   font-size: $base-font-size;
-   font-family: $primary-font;
-   line-height: $line-height-base;
-   color: $text-color;
-   background-color: $bg-color;
+   font-size: typography.$base-font-size;
+   font-family: typography.$primary-font;
+   line-height: typography.$line-height-base;
+   color: colors.$text-color;
+   background-color: colors.$bg-color;
  
    /* Set transition defaults */
    --transition-speed: 0.2s;
@@ -27,22 +27,22 @@
  
  /* Global focus styles */
  *:focus-visible {
-   outline: 2px solid $accent-color;
+   outline: 2px solid colors.$accent-color;
    outline-offset: 2px;
  }
  
  /* Basic typography */
  h1, h2, h3, h4, h5, h6 {
-   font-weight: $font-weight-bold;
-   line-height: $line-height-tight;
+   font-weight: typography.$font-weight-bold;
+   line-height: typography.$line-height-tight;
    margin-bottom: 0.5em;
  }
  
- h1 { font-size: $font-size-2xl; }
- h2 { font-size: $font-size-xl; }
- h3 { font-size: $font-size-lg; }
- h4 { font-size: $font-size-md; }
- h5, h6 { font-size: $font-size-sm; }
+ h1 { font-size: typography.$font-size-2xl; }
+ h2 { font-size: typography.$font-size-xl; }
+ h3 { font-size: typography.$font-size-lg; }
+ h4 { font-size: typography.$font-size-md; }
+ h5, h6 { font-size: typography.$font-size-sm; }
  
  p {
    margin-bottom: 1em;
@@ -50,17 +50,17 @@
  
  /* Links */
  a {
-   color: $accent-color;
+   color: colors.$accent-color;
    transition: color var(--transition-speed) var(--transition-fn);
  
    &:hover {
-     color: lighten($accent-color, 10%);
+     color: color.adjust(colors.$accent-color, $lightness: 10%);
    }
  }
  
  /* Code blocks */
  pre, code {
-   font-family: $monospace-font;
+   font-family: typography.$monospace-font;
    background-color: rgba(0, 0, 0, 0.2);
    padding: 0.2em 0.4em;
    border-radius: 3px;
@@ -79,8 +79,8 @@
  
  /* Selection styling */
  ::selection {
-   background-color: rgba($accent-color, 0.3);
-   color: $text-color;
+   background-color: rgba(colors.$accent-color, 0.3);
+   color: colors.$text-color;
  }
 
  /* Global dragging cursor style */

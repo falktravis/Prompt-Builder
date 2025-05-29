@@ -34,28 +34,27 @@ export const usePrompts = () => {
    * @param promptId ID of the prompt to add the section to
    * @param componentId ID of the component to create section from
    */
-  const createSectionFromComponent = useCallback((promptId: number, componentId: number) => {
+  const createSectionFromComponent = useCallback((promptId: string, componentId: string) => {
     const component = findComponentById(componentId);
     if (!component) return;
     
-    // Add a new section
-    addSectionToPrompt(promptId, component.componentType);
+    // Add a new section and get its ID
+    const newSectionId = addSectionToPrompt(promptId, component.componentType);
     
-    // Find the newly added section (last section in the prompt)
-    const prompt = prompts.find(p => p.id === promptId);
-    if (!prompt) return;
+    if (!newSectionId) {
+      console.error("Failed to create a new section or retrieve its ID.");
+      return;
+    }
     
-    const newSection = prompt.sections[prompt.sections.length - 1];
-    
-    // Update it with the component data
-    updateSection(promptId, newSection.id, {
+    // Update the newly added section with the component data
+    updateSection(promptId, newSectionId, {
       name: component.name,
       content: component.content,
       type: component.componentType,
       linkedComponentId: component.id,
       originalContent: component.content
     });
-  }, [findComponentById, addSectionToPrompt, prompts, updateSection]);
+  }, [findComponentById, addSectionToPrompt, updateSection]);
 
   /**
    * Copy a prompt to the clipboard
@@ -65,13 +64,15 @@ export const usePrompts = () => {
    * @returns Promise resolving to true if successful, false otherwise
    */
   const copyPromptToClipboard = useCallback((
-    promptId: number, 
+    promptId: string, 
     includeSystemPrompt = false,
     systemPrompt = ""
   ): Promise<boolean> => {
     const promptText = getCompiledPromptText(promptId);
     const finalText = includeSystemPrompt && systemPrompt
-      ? `${systemPrompt}\n\n${promptText}`
+      ? `${systemPrompt}
+
+${promptText}`
       : promptText;
       
     if (!finalText) return Promise.resolve(false);
@@ -102,7 +103,7 @@ export const usePrompts = () => {
    * @param promptId ID of the prompt containing the section.
    * @param sectionId ID of the section to save.
    */
-  const saveSectionToComponentLibrary = useCallback((promptId: number, sectionId: number) => {
+  const saveSectionToComponentLibrary = useCallback((promptId: string, sectionId: string) => {
     const prompt = prompts.find(p => p.id === promptId);
     if (!prompt) {
       console.error(`saveSectionToComponentLibrary: Prompt with id ${promptId} not found.`);

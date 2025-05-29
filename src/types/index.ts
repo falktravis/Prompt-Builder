@@ -4,7 +4,7 @@
 
 // Component types for the sidebar tree
 export type ComponentType = {
-  id: number;
+  id: string; // Changed from number
   name: string;
   type: "component";
   content: string;
@@ -13,10 +13,11 @@ export type ComponentType = {
 
 // Folder type for the sidebar tree
 export type FolderType = {
-  id: number;
+  id: string; // Changed from number
   name: string;
   type: "folder";
   children: (FolderType | ComponentType)[];
+  expanded: boolean; // New property
 };
 
 // Union type for items in the tree
@@ -24,11 +25,11 @@ export type TreeNode = FolderType | ComponentType;
 
 // Section type for prompt building
 export type Section = {
-  id: number;
+  id: string; // Changed from number
   name: string;
   content: string;
   type: "instruction" | "role" | "context" | "format" | "style";
-  linkedComponentId?: number;
+  linkedComponentId?: string; // Changed from number to string
   originalContent?: string;
   open: boolean;
   dirty: boolean;
@@ -39,7 +40,7 @@ export type Section = {
 
 // Prompt type containing sections
 export type Prompt = {
-  id: number;
+  id: string; // Changed from number
   num: number;
   name: string;
   sections: Section[];

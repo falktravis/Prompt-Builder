@@ -3,7 +3,7 @@
  * Handles operations on the folder/component tree structure
  */
 
-import { TreeNode, FolderType, ComponentType } from "../types";
+import { TreeNode, FolderType, ComponentType } from "../types"; // Ensure ComponentType is imported
 
 /**
  * Check if a node is a descendant of another node
@@ -29,7 +29,7 @@ export const isDescendant = (descendant: TreeNode, ancestor: FolderType): boolea
  */
 export const updateFolderInTree = (
   tree: FolderType[],
-  folderId: number,
+  folderId: string, // Changed from number
   newData: Partial<FolderType>
 ): FolderType[] => {
   return tree.map((node) => {
@@ -57,7 +57,7 @@ export const updateFolderInTree = (
  */
 export const insertNode = (
   tree: FolderType[],
-  parentId: number,
+  parentId: string, // Changed from number
   newNode: TreeNode
 ): FolderType[] => {
   return tree.map((node) => {
@@ -85,23 +85,18 @@ export const insertNode = (
  * @param nodeId ID of node to remove
  * @returns Updated tree structure
  */
-export const removeNode = (tree: FolderType[], nodeId: number): FolderType[] => {
-  return tree.map((node) => {
+export const removeNode = (tree: FolderType[], nodeId: string): FolderType[] => { // Changed nodeId from number
+  return tree.filter(node => node.id !== nodeId).map((node) => { // Filter at the current level first
     if (node.type === "folder") {
       return {
         ...node,
-        children: node.children
-          .filter((child) => child.id !== nodeId)
-          .map((child) => 
-            child.type === "folder" 
-              ? { ...child, children: removeNode([child] as FolderType[], nodeId)[0].children }
-              : child
-          ) as (FolderType | ComponentType)[],
+        children: removeNode(node.children as FolderType[], nodeId) as (FolderType | ComponentType)[] // Recursively call on children
       };
     }
     return node;
   });
 };
+
 
 /**
  * Move a node within the tree
@@ -112,15 +107,14 @@ export const removeNode = (tree: FolderType[], nodeId: number): FolderType[] => 
  */
 export const moveNodeInTree = (
   tree: FolderType[],
-  draggedNodeId: number,
-  targetFolderId: number
+  draggedNodeId: string, // Changed from number
+  targetFolderId: string // Changed from number
 ): FolderType[] => {
-  // Find the node to move
   let nodeToMove: TreeNode | null = null;
-  let updatedTree = JSON.parse(JSON.stringify(tree));
-  
+  const updatedTree = JSON.parse(JSON.stringify(tree)); // Deep clone
+
   // Helper function to find and remove the node
-  const findAndRemove = (nodes: (FolderType | ComponentType)[], id: number): TreeNode | null => {
+  const findAndRemove = (nodes: (FolderType | ComponentType)[], id: string): TreeNode | null => { // Changed id from number
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       if (node.id === id) {
@@ -136,24 +130,23 @@ export const moveNodeInTree = (
     return null;
   };
   
-  // Find and remove the node from its current location
   nodeToMove = findAndRemove(updatedTree, draggedNodeId);
   
   if (!nodeToMove) {
-    return tree; // Node not found, return original tree
+    return tree; 
   }
   
   // Helper function to insert the node into its new location
-  const insertIntoTarget = (nodes: (FolderType | ComponentType)[], targetId: number, node: TreeNode): boolean => {
+  const insertIntoTarget = (nodes: (FolderType | ComponentType)[], targetId: string, nodeToInsert: TreeNode): boolean => { // Changed targetId from number, node to nodeToInsert
     for (let i = 0; i < nodes.length; i++) {
       const current = nodes[i];
       if (current.id === targetId && current.type === "folder") {
-        current.children.push(node);
+        current.children.push(nodeToInsert);
         return true;
       }
       
       if (current.type === "folder") {
-        if (insertIntoTarget(current.children, targetId, node)) {
+        if (insertIntoTarget(current.children, targetId, nodeToInsert)) {
           return true;
         }
       }
@@ -161,28 +154,51 @@ export const moveNodeInTree = (
     return false;
   };
   
-  // Insert the node into the target folder
   if (!insertIntoTarget(updatedTree, targetFolderId, nodeToMove)) {
-    return tree; // Target folder not found, return original tree
+     // If target folder is not found, or if trying to drop into a root component (which is not a folder)
+     // For simplicity, if the target isn't a valid folder, we can choose to not move the node
+     // or append to root if targetFolderId implies root, though current logic requires a folder.
+     // Re-adding to root if not inserted, or consider it an invalid move.
+     // For now, if insertIntoTarget returns false, it means target folder wasn't found.
+     // To be safe, returning the original tree if the target is not found.
+     return tree;
   }
   
   return updatedTree;
 };
 
 /**
+ * Recursively finds a node by its ID and applies an update function to it,
+ * returning a new tree structure with the updated node.
+ * @param nodes The array of nodes to search within.
+ * @param nodeId The ID of the node to update.
+ * @param updateFn A function that takes the found node and returns an updated version of it.
+ * @returns A new array of nodes with the specified node updated.
+ */
+export const updateNodeById = (nodes: FolderType[], id: string, updates: Partial<FolderType>): FolderType[] => {
+    return nodes.map(node => {
+        if (node.id === id) {
+            return { ...node, ...updates };
+        }
+        if (node.children) {
+            // Correctly type the children before recursive call
+            const children = node.children as FolderType[]; // Assuming children of FolderType are FolderType
+            return { ...node, children: updateNodeById(children, id, updates) };
+        }
+        return node;
+    });
+};
+
+/**
  * Deep clones a node and assigns new unique IDs to the node and its children.
  * @param node The node to clone.
- * @param generateId Function to generate unique IDs.
+ * @param generateId Function to generate unique IDs (now string).
  * @returns The cloned node with new IDs.
  */
-export const cloneAndAssignNewIds = (node: TreeNode, generateId: () => number): TreeNode => {
-  // Perform a deep clone of the input node
+export const cloneAndAssignNewIds = (node: TreeNode, generateId: () => string): TreeNode => { // Changed generateId return type
   const clonedNode = JSON.parse(JSON.stringify(node)) as TreeNode;
-
-  // Assign a new ID to the cloned root node
   clonedNode.id = generateId();
 
-  // If the cloned node is a folder, recursively call cloneAndAssignNewIds for its children
   if (clonedNode.type === "folder") {
     clonedNode.children = clonedNode.children.map(child => cloneAndAssignNewIds(child, generateId));
   }
@@ -198,15 +214,15 @@ export const cloneAndAssignNewIds = (node: TreeNode, generateId: () => number): 
  * - Assigns new IDs to all nodes from the file being added.
  * @param existingNodes The current array of top-level folders.
  * @param newNodesFromFile The array of top-level folders parsed from the loaded file.
- * @param generateId Function to generate unique IDs.
+ * @param generateId Function to generate unique IDs (now string).
  * @returns A new array representing the merged tree structure.
  */
 export const mergeTreeData = (
   existingNodes: FolderType[],
   newNodesFromFile: FolderType[],
-  generateId: () => number
+  generateId: () => string // Changed generateId return type
 ): FolderType[] => {
-  const mergedResultNodes: FolderType[] = JSON.parse(JSON.stringify(existingNodes)); // Deep clone to avoid mutating original
+  const mergedResultNodes: FolderType[] = JSON.parse(JSON.stringify(existingNodes)); 
 
   newNodesFromFile.forEach(nodeFromFile => {
     if (nodeFromFile.type === "folder") {
@@ -215,21 +231,15 @@ export const mergeTreeData = (
       );
 
       if (existingFolder) {
-        // Folder with the same name exists, merge its children
-        // Ensure children are treated as TreeNode[] for recursive merging
         existingFolder.children = mergeTreeDataRecursive(
           existingFolder.children,
           nodeFromFile.children,
           generateId
         );
       } else {
-        // Folder does not exist, clone and add it with new IDs
         mergedResultNodes.push(cloneAndAssignNewIds(nodeFromFile, generateId) as FolderType);
       }
     }
-    // Components at the root level are not expected by FolderType[],
-    // but if the function were generalized, component handling would go here.
-    // For this specific use case, newNodesFromFile is FolderType[].
   });
 
   return mergedResultNodes;
@@ -239,13 +249,13 @@ export const mergeTreeData = (
  * Recursive helper for mergeTreeData to handle children arrays (mixed FolderType and ComponentType).
  * @param existingChildren Current children array.
  * @param newChildrenFromFile New children array from the file.
- * @param generateId Function to generate unique IDs.
+ * @param generateId Function to generate unique IDs (now string).
  * @returns Merged children array.
  */
 const mergeTreeDataRecursive = (
   existingChildren: (FolderType | ComponentType)[],
   newChildrenFromFile: (FolderType | ComponentType)[],
-  generateId: () => number
+  generateId: () => string // Changed generateId return type
 ): (FolderType | ComponentType)[] => {
   const mergedChildren: (FolderType | ComponentType)[] = JSON.parse(JSON.stringify(existingChildren));
 
@@ -272,9 +282,45 @@ const mergeTreeDataRecursive = (
       if (!existingComponent) {
         mergedChildren.push(cloneAndAssignNewIds(childFromFile, generateId) as ComponentType);
       }
-      // If component with same name exists, skip to prevent duplication
     }
   });
 
   return mergedChildren;
+};
+
+// Helper function to find a node by ID in the tree
+export const findNodeById = (tree: FolderType[], nodeId: string): TreeNode | null => {
+  for (const node of tree) {
+    if (node.id === nodeId) {
+      return node;
+    }
+    if (node.type === "folder") {
+      const foundInChildren = findNodeById(node.children as FolderType[], nodeId);
+      if (foundInChildren) {
+        return foundInChildren;
+      }
+    }
+  }
+  return null;
+};
+
+/**
+ * Normalizes tree data loaded from storage, ensuring each folder has an 'expanded' property.
+ * Defaults to false, except for the root node which defaults to true.
+ * @param nodes The tree nodes to normalize.
+ * @param rootId The ID of the root node.
+ * @returns Normalized tree nodes, cast to FolderType[] as per plan for top-level.
+ */
+export const normalizeExpansionState = (nodes: (FolderType | ComponentType)[], defaultExpanded: boolean = false): (FolderType | ComponentType)[] => {
+    return nodes.map(node => {
+        if (node.type === 'folder') {
+            const folderNode = node as FolderType;
+            return {
+                ...folderNode,
+                expanded: folderNode.expanded !== undefined ? folderNode.expanded : defaultExpanded,
+                children: folderNode.children ? normalizeExpansionState(folderNode.children, defaultExpanded) : []
+            };
+        }
+        return node; // For ComponentType, just return the node
+    });
 };

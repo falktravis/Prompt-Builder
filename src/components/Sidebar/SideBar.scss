@@ -2,205 +2,165 @@
  * Sidebar styles
  */
 
- @import "../../styles/variables/colors";
- @import "../../styles/variables/mixins";
- 
- // Side bar container
- #side-bar {
-   flex: 0 0 460px;
-   background-color: $side-bar-bg;
-   display: flex;
-   flex-direction: column;
-   height: 100%;
-   overflow: hidden;
-   
-   // Header styling
-   header {
-     @include flex(row, space-between, center);
-     padding: 0 1rem;
-     
-     .title {
-       @include flex(row, flex-start, center);
-       gap: 0.5rem;
-     }
-     
-     h1 {
-       font-size: 1.5rem;
-       font-family: "Open Sans", sans-serif;
-     }
-     
-     a {
-       color: $accent-color;
-       text-decoration: none;
-       font-size: 1rem;
-       padding-top: 0.5rem;
-       margin-left: 1rem;
-     }
-     
-     .settings-btn {
-       cursor: pointer;
-       background: transparent;
-       border: none;
-       color: grey;
-       font-size: 1.75rem;
-       @include flex(row, center, center);
-       
-       &:hover {
-         color: lighten($accent-color, 10%);
-       }
-     }
-   }
-   
-   .tree-container {
-     flex: 1;
-     overflow-y: auto;
-     padding: 1rem 0.5rem;
-     @include custom-scrollbar();
-   }
-   
-   // Tree view styles
-   .tree-view {
-     user-select: none;
-   }
+// Side bar container
+#side-bar {
+  flex: 0 0 25vw;
+  background-color: colors.$side-bar-bg;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 
-   .tree-node[draggable="true"] {
-     cursor: grab;
-   }
+  header{
+    @include mixins.flex(row, space-between, center);
+    padding: 0.5rem 1rem;
+    padding-bottom: 0;
+    font-size: typography.$font-size-lg;
 
-   .tree-node[draggable="false"] {
+    h2{
+      color: colors.$text-color;
+      font-size: inherit;
+      font-weight: 500;
+      margin: 0.5rem 0;
+    }
+
+    button{
+      color: colors.$text-color;
+    }
+  }
+  
+  .tree-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+    @include mixins.custom-scrollbar();
+  }
+  
+  // Tree view styles
+  .tree-view {
+    user-select: none;
+  }
+
+  .tree-node[draggable="true"] {
+    cursor: grab;
+  }
+
+  .tree-node[draggable="false"] {
     cursor: pointer;
   }
-   
-   // Individual tree node
-   .tree-node {
-     padding: 0.15rem 0.5rem;
-     border-radius: 4px;
-     margin-bottom: 0.2rem;
-     border: 1px solid transparent;
-     
-     &:hover {
-       background-color: $hover-gray;
-     }
-     
-     &.selected {
-       background-color: $dark-gray;
-     }
-     
-     &.hover {
-       background-color: rgba($accent-color, 0.1);
-       border: 1px dashed $accent-color;
-     }
-     
-     .node-content {
-       display: flex;
-       align-items: center;
-       
-       .node-icon {
-         margin-right: 0.5rem;
-         display: flex;
-         align-items: center;
-         justify-content: center;
-       }
-       
-       .node-name {
-         flex: 1;
-         overflow: hidden;
-         text-overflow: ellipsis;
-         white-space: nowrap;
-       }
-       
-       .node-actions {
-         display: none;
-         align-items: center;
-         
-         .action-btn {
-           @include btn();
-           padding: 0.15rem;
-           margin-left: 0.25rem;
-           display: flex;
-           align-items: center;
-           justify-content: center;
-           border-radius: 50%;
+  
+  // Individual tree node
+  .tree-node {
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.2rem;
+    border: 1px solid transparent;
+    
+    &:hover {
+      background-color: colors.$hover-gray;
+    }
+    
+    &.selected {
+      background-color: colors.$dark-gray;
+    }
+    
+    &.hover {
+      background-color: rgba(colors.$accent-color, 0.1);
+      border: 1px dashed colors.$accent-color;
+    }
+    
+    .node-content {
+      display: flex;
+      align-items: center;
+      
+      .node-icon {
+        margin-right: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .node-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .node-actions {
+        display: none;
+        align-items: center;
+        
+        .action-btn {
+          @include mixins.btn();
+          padding: 0.15rem;
+          margin-left: 0.25rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
 
-           &:hover {
-             background-color: $hover-gray-light;
-           }
-         }
+          &:hover {
+            background-color: colors.$hover-gray-light;
+          }
+        }
         .delete-btn {
           &:hover {
-            color: $warning-color;
+            color: colors.$warning-color;
           }
         }
         .add-folder-btn, .add-component-btn {
           &:hover {
-            color: $info-color;
+            color: colors.$info-color;
           }
         }
-       }
-     }
-     &:hover .node-actions {
+      }
+    }
+    &:hover .node-actions {
       display: flex;
     }
-   }
-   
-   // New folder input
-   .new-folder-input-container {
-     margin-bottom: 0.5rem;
-     
-     .new-folder-input {
-       @include btn();
-       width: 100%;
-       padding: 0.3rem 0.5rem;
-       background-color: $dark-gray;
-       color: $text-color;
-       border: 1px solid $light-gray;
-       
-       &:focus {
-         outline: none;
-         border-color: $accent-color;
-       }
-     }
-   }
-   
-   // File controls
-   .file-controls {
-     padding: 0.5rem;
-     display: flex;
-     flex-direction: column;
-     justify-content: space-between;
-     gap: 0.5rem;
-
-     >button{
-        @include btn();
-        background-color: $dark-gray;
-        padding: 0.5rem;
-        margin: 0 0.25rem;
-        font-size: 1rem;
-        border-radius: 0.25rem;  
-        flex: 1;
-        color: $text-color;
-        cursor: pointer;
-        transition: background-color 0.3s ease-in-out;
+  }
   
-        &:hover {
-          background-color: $hover-gray;
-        }
-     }
+  // New folder input
+  .new-folder-input-container {
+    
+    .new-folder-input {
+      width: calc(100% - 1rem);
+      padding: 0.3rem 0.5rem;
+      background-color: colors.$dark-gray;
+      color: colors.$text-color;
+      border: 1px solid colors.$light-gray;
+      text-align: left;
+      
+      &:focus {
+        outline: none;
+        border-color: colors.$accent-color;
+      }
+    }
+  }
+  
+  // File controls
+  .file-controls {
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.5rem;
 
-     .load-save-controls{
+    .load-save-controls{
       display: flex;
       justify-content: space-between;
 
       .file-btn {
-        @include btn();
+        @include mixins.btn();
         flex: 1;
         padding: 0.5rem;
         margin: 0 0.25rem;
-        background-color: $dark-gray;
+        background-color: colors.$dark-gray;
         border-radius: 0.25rem;  
         
         &:hover {
-          background-color: $hover-gray;
+          background-color: colors.$hover-gray;
         }
         
         &.load-btn {
@@ -211,13 +171,20 @@
           background-color: #2a5d8c;
         }
       }
-     }
-   }
- }
+    }
+  }
+}
 
 // Component icon colors
-.context-icon { color: $context-color; }
-.format-icon { color: $format-color; }
-.instruction-icon { color: $instruction-color; }
-.role-icon { color: $role-color; }
-.style-icon { color: $style-color; }
+.context-icon { color: colors.$context-color; }
+.format-icon { color: colors.$format-color; }
+.instruction-icon { color: colors.$instruction-color; }
+.role-icon { color: colors.$role-color; }
+.style-icon { color: colors.$style-color; }
+
+
+@media (max-width: 1200px) {
+  #side-bar {
+    flex: 0 0 35vw; // Adjust width for smaller screens
+  }
+}

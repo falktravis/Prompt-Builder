@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * SettingsModal
  * Modal for managing application settings

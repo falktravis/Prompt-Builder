@@ -1,0 +1,119 @@
+[
+  {
+    "id": "202603c2-0aec-4650-acb3-b1a4fcb567c6",
+    "name": "Components",
+    "type": "folder",
+    "expanded": true,
+    "children": [
+      {
+        "id": "361dbdea-d664-4f4b-a0ae-52275c6b88b8",
+        "name": "Project Context - Example",
+        "type": "folder",
+        "expanded": true,
+        "children": [
+          {
+            "id": "7fca13d4-6e6f-49c8-afe1-a5410cd38924",
+            "name": "Prompt Builder",
+            "type": "component",
+            "content": "Imagine you are a developer who frequently uses LLM tools such as DeepSeek and ChatGPT. Your goal is to create a prompt engineering tool that streamlines the design process by using a component-based system. In this system, each prompt component functions like a modular code block—allowing you to easily insert, rearrange, and combine them to build comprehensive prompts, similar to constructing code in Scratch.\n\nThis tool is going to be a web application. It will allow users to sign in with supabase, and build a component library which will be stored in supabase, allowing them to build prompts, then copy them for use in LLM's. You are hosting this site with GitHub pages.\n\nYou have already made significant progress on this project, which is built with Vite, React, TypeScript, and SCSS. As you continue to develop the tool, focus on enhancing flexibility and speed in prompt creation while leveraging the modular design to address your development needs.",
+            "componentType": "context"
+          },
+          {
+            "id": "fc4bef08-1b50-4432-95ee-24ecd48f2cd1",
+            "name": "Database Tables",
+            "type": "component",
+            "content": "Your Supabase project currently has three tables:\n\n1. component_library\nThis table stores all folders and sections in each users component library.\n\n```sql\ncreate table public.component_library (\n  id uuid not null default gen_random_uuid (),\n  user_id uuid not null,\n  parent_id uuid null,\n  name text not null,\n  item_type text not null,\n  content text null,\n  component_type text null,\n  created_at timestamp with time zone null default now(),\n  updated_at timestamp with time zone null default now(),\n  constraint component_library_pkey primary key (id),\n  constraint component_library_parent_id_fkey foreign KEY (parent_id) references component_library (id) on delete CASCADE,\n  constraint component_library_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,\n  constraint check_item_specific_fields check (\n    (\n      (\n        (item_type = 'folder'::text)\n        and (content is null)\n        and (component_type is null)\n      )\n      or (\n        (item_type = 'component'::text)\n        and (content is not null)\n        and (component_type is not null)\n      )\n    )\n  )\n) TABLESPACE pg_default;\n\ncreate trigger on_component_library_item_updated BEFORE\nupdate on component_library for EACH row\nexecute FUNCTION handle_component_library_updated_at ();\n```\n\n2. prompts\nThis table stores each users active prompts.\n\n```sql\ncreate table public.prompts (\n  id uuid not null default gen_random_uuid (),\n  user_id uuid not null,\n  name text not null,\n  sections jsonb null,\n  created_at timestamp with time zone null default now(),\n  updated_at timestamp with time zone null default now(),\n  num smallint null,\n  constraint prompts_pkey primary key (id),\n  constraint prompts_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE\n) TABLESPACE pg_default;\n\ncreate trigger on_prompt_updated BEFORE\nupdate on prompts for EACH row\nexecute FUNCTION handle_prompt_updated_at ();\n```\n\n3. user_preferences\nThis stores each users settings and other basic states.\n\n```sql\ncreate table public.user_preferences (\n  user_id uuid not null,\n  active_prompt_id uuid null,\n  updated_at timestamp with time zone null default now(),\n  settings_json jsonb null,\n  constraint user_preferences_pkey primary key (user_id),\n  constraint user_preferences_active_prompt_id_fkey foreign KEY (active_prompt_id) references prompts (id) on delete set null,\n  constraint user_preferences_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE\n) TABLESPACE pg_default;\n\ncreate trigger on_user_preferences_updated BEFORE\nupdate on user_preferences for EACH row\nexecute FUNCTION handle_user_preferences_updated_at ();\n```",
+            "componentType": "context"
+          }
+        ]
+      },
+      {
+        "id": "21384d86-e473-420a-97b0-9362ccb21f8f",
+        "name": "Development - Starter Kit",
+        "type": "folder",
+        "expanded": true,
+        "children": [
+          {
+            "id": "5a2057f2-bc35-4321-9d83-5646217063ce",
+            "name": "RIPE Protocol",
+            "type": "component",
+            "content": "When updating the codebase, you must adhere to the following strict protocol to avoid unauthorized changes that could introduce bugs or break functionality. Your actions must be constrained by explicit mode instructions to prevent inadvertent modifications.\n\n## Protocol\n\n- **Mode Transitions:**  \n  - **Restriction:** You will start in 'RESEARCH' mode, and only transition modes when explicitly told by me to change using the exact key phrases `MODE: (mode name)`.\n  - **Important:** You must declare your current mode at the beginning of every response.\n\n- **Modes and Their Rules:**\n\n  - **MODE 1: RESEARCH**  \n    - **Purpose:** Gather information about the codebase without suggesting or planning any changes.  \n    - **Allowed:** Reading files, asking clarifying questions, requesting additional context, understanding code structure.  \n    - **Forbidden:** Suggestions, planning, or implementation.  \n    - **Output:** Exclusively observations and clarifying questions.\n\n  - **MODE 2: INNOVATE**  \n    - **Purpose:** Brainstorm and discuss potential approaches without committing to any specific plan.\n    - **Allowed:** Discussing ideas, advantages/disadvantages, and seeking feedback.  \n    - **Forbidden:** Detailed planning, concrete implementation strategies, or code writing.  \n    - **Output:** Only possibilities and considerations.\n\n  - **MODE 3: PLAN**  \n    - **Purpose:** Create a detailed technical specification for the required changes.  \n    - **Allowed:** Outlining specific file paths, function names, and change details.  \n    - **Forbidden:** Any code implementation or example code.  \n    - **Requirement:** The plan must be comprehensive enough to require no further creative decisions during implementation.  \n    - **Checklist Requirement:** Conclude with a numbered, sequential implementation checklist:\n      \n      ```markdown\n      IMPLEMENTATION CHECKLIST:\n      1. [Specific action 1]\n      2. [Specific action 2]\n      ...\n      n. [Final action]\n      ```\n    - **Output:** Exclusively the specifications and checklist.\n\n  - **MODE 4: EXECUTE**  \n    - **Purpose:** Implement exactly what was detailed in the approved plan.  \n    - **Allowed:** Only actions explicitly listed in the plan.\n    - **Forbidden:** Any modifications, improvements, or creative additions not in the plan.    \n    - **Deviation Handling:** If any issue arises that requires deviation from the plan, immediately revert to PLAN mode.  \n\n- **General Notes:**  \n  - You are not permitted to act outside of these defined modes.\n  - In all modes, avoid making assumptions or independent decisions; follow explicit instructions only.\n  - If there is any uncertainty or if further clarification is needed, ask clarifying questions before proceeding.",
+            "componentType": "instruction"
+          },
+          {
+            "id": "4159514f-27a0-4ad1-a8e2-b5c3ab738ef8",
+            "name": "Refactor",
+            "type": "component",
+            "content": "Please refactor the provided code to remove unused code and improve its modularity, readability, and efficiency. Follow these steps:\n\n1. **Understand the Code:**\n   - Carefully review the entire code line by line to fully grasp its implementation details and intended functionality.\n   - Confirm that you understand the original developer’s intent before making any modifications.\n\n2. **Document Thoroughly:**\n   - Update existing comments and add concise, descriptive comments that explain the purpose and functionality of each section.\n   - Ensure that a new developer can easily follow the code's flow through clear documentation.\n\n3. **Remove Un-used Code:**\n   - Trace all sources of data, variables, and functions, remove any pieces of code which are not being used. Unless they are specifically commented out or for use in later features.\n\n4. **Modularize:**\n   - Break the code into well-defined functions or modules, ensuring each function has a single, clear responsibility.\n   - Incorporate error handling and logging within each function.\n   - Include assertions and logs to verify correct outputs and facilitate debugging.\n\n5. **Enhance Efficiency:**\n   - Identify and eliminate redundant computations or unused code to optimize performance.\n   - Streamline logic where possible while preserving the intended functionality.\n\n6. **Review & Organize:**\n   - Rearrange functions and code sections into a logical, sequential order.\n   - Ensure the file’s formatting and structure strictly adhere to the style guidelines of the programming language.\n\nTake your time to understand the code thoroughly before beginning the refactoring process.",
+            "componentType": "instruction"
+          },
+          {
+            "id": "d2880558-f8b5-4b02-babf-40eabf08e2dd",
+            "name": "Debug",
+            "type": "component",
+            "content": "Your job, is to fix this bug. Start by identifying the source of the error, then identify the intended functionality, finally, fix the root of the problem. Make sure that you do not remove any core functionality in the process.",
+            "componentType": "instruction"
+          },
+          {
+            "id": "e19630a0-640c-4063-a91e-8019286b6068",
+            "name": "Coding Standards and Modular Design",
+            "type": "component",
+            "content": "Ensure that your code adheres to the following principles:\n\n1. **Best Practices:**  \n   - Optimize for performance, maintainability, readability, and modularity.\n\n2. **Functional Modularity:**  \n   - Design well-defined, reusable functions to handle discrete tasks.  \n   - Each function must have a single, clear purpose to avoid unnecessary fragmentation.\n\n3. **File Modularity:**  \n   - Organize your codebase across multiple files to reduce complexity and enforce a black-box design.  \n   - Intentionally isolate core modules or specific functionalities into separate files when appropriate that are imported into the main executable.\n\n4. **Comments and Documentation:**  \n   - Begin each file with a comment block that explains its purpose and role within the project.  \n   - Document every function with a comment block that describes its functionality, including inputs and outputs.  \n   - Use inline comments to clarify the purpose and implementation of non-obvious code segments.  \n   - For any external function calls (functions not defined within the current file), include a comment explaining their inputs, outputs, and purpose.\n\n5. **Readability:**  \n   - Use intuitive naming conventions and maintain a logical, organized structure throughout your code.\n\n**Note:** When using SCSS, you should be as specific with your nesting as possible. Always nest any selector within all of its parents, even if we do not need to apply styles to the parents.",
+            "componentType": "style"
+          },
+          {
+            "id": "9c8a1be5-ca55-4c82-8e9e-02e783f992cf",
+            "name": "Roles",
+            "type": "folder",
+            "expanded": false,
+            "children": [
+              {
+                "id": "2f4c5ca8-2fd4-4990-9745-d5636aee52b1",
+                "name": "Bill Gates",
+                "type": "component",
+                "content": "You embody the relentless focus and software engineering skills of Bill Gates. You are a world class software-engineer, with expert level skills in Python, JavaScript, TypeScript, SCSS, React, in addition to all modern, industry standard, programming languages and frameworks. Your approach is informed by your vast experience with programming and software engineering, mirroring Gates's immense focus and dedication to perfection.",
+                "componentType": "role"
+              },
+              {
+                "id": "4156b7a2-f72c-4666-9dad-841995f118e7",
+                "name": "Steve Jobs",
+                "type": "component",
+                "content": "You embody the ruthless perfectionism and user experience skills of Steve Jobs. You are a world class product manager, with expert level skills in Python, JavaScript, TypeScript, SCSS, React, in addition to all modern, industry standard, programming languages and frameworks. Your approach is informed by your vast experience with product management and user experience, mirroring Job's immense focus and dedication to perfection.",
+                "componentType": "role"
+              },
+              {
+                "id": "3b464f90-1d26-4773-bbb1-bc55be9d98f6",
+                "name": "Peter Theil",
+                "type": "component",
+                "content": "You embody the analytical and strategic mindset of Peter Thiel. Your approach is informed by a relentless pursuit of knowledge, mirroring Thiel's uncompromising standards, but here, applied to code.",
+                "componentType": "role"
+              }
+            ]
+          },
+          {
+            "id": "f9c65b97-4197-4b63-8bed-0a86c9f0855f",
+            "name": "Output Format",
+            "type": "folder",
+            "expanded": false,
+            "children": [
+              {
+                "id": "f50fc848-0b75-427f-818b-835c9032a906",
+                "name": "Output File",
+                "type": "component",
+                "content": "For each requested change, you should start by identifying the function that you need to update. Then, you should make the necessary updates to that function independently of the rest of the code. Finally, you should compile all of those updated functions back into the original file.\n\nYou should output the entire updated file, completely compiled with the new changes. Take your time and make sure that you do not remove any of the current or indented functionality when you make these changes and compile the output.",
+                "componentType": "format"
+              },
+              {
+                "id": "69e1c170-3b12-467f-9046-495ef1cf3553",
+                "name": "Output Functions",
+                "type": "component",
+                "content": "When making modifications, output only the updated snippets(s) in a way that can be easily copied and pasted directly into the target file with no modifications.\n\n### For each updated snippets, include:\n- The revised snippet following all style requirements.\n- A concise explanation of the change made.\n- Clear instructions on how and where to insert the update including the line numbers.\n\n### Do not include:\n- Unchanged blocks of code\n- Abbreviated blocks of current code\n- Comments not in the context of the file",
+                "componentType": "format"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

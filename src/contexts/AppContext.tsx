@@ -4,7 +4,9 @@
  */
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { Settings } from "../types";
+import { Settings } from "@/types";
+
+const LOCAL_STORAGE_SETTINGS_KEY = 'promptBuilderSettings'; // May still be used for temporary or non-critical settings
 
 // Default settings
 const DEFAULT_SETTINGS: Settings = {
@@ -56,53 +58,73 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [isCommunityModalOpen, setCommunityModalOpen] = useState(false);
   const [appInitialized, setAppInitialized] = useState(false);
 
-  // Load settings from storage on component mount
+  // Load settings on component mount
   useEffect(() => {
     const loadSettings = async () => {
+      setAppInitialized(false);
       try {
-        // Check if chrome.storage is available (extension environment)
-        if (typeof chrome !== 'undefined' && chrome.storage) {
-          chrome.storage.local.get('settings', (data) => {
-            if (data.settings) {
-              setSettings(data.settings);
-            }
-            setAppInitialized(true);
-          });
-        } else {
-          // Fallback to localStorage in development environment
-          const storedSettings = localStorage.getItem('settings');
-          if (storedSettings) {
-            setSettings(JSON.parse(storedSettings));
+        const response = await fetch('/api/settings');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.settings) {
+            setSettings(data.settings);
+          } else {
+            // No settings in DB, use defaults and save them
+            setSettings(DEFAULT_SETTINGS);
+            await fetch('/api/settings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ settings: DEFAULT_SETTINGS, activePromptId: null }),
+            });
           }
-          setAppInitialized(true);
+        } else {
+          console.error('Failed to load settings from API, using defaults.');
+          setSettings(DEFAULT_SETTINGS);
+          // Optionally try to save defaults if API is reachable but settings are missing
+          await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ settings: DEFAULT_SETTINGS, activePromptId: null }),
+          });
         }
       } catch (error) {
         console.error('Error loading settings:', error);
-        setAppInitialized(true);
+        setSettings(DEFAULT_SETTINGS); // Fallback to defaults on any error
       }
+      setAppInitialized(true);
     };
 
     loadSettings();
-  }, []);
+  }, []); // Run once on mount
 
   // Save settings when they change
   useEffect(() => {
-    if (!appInitialized) return;
+    if (!appInitialized) return; // Don't save during initial load or if not initialized
 
-    try {
-      if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.local.set({ settings });
-      } else {
-        localStorage.setItem('settings', JSON.stringify(settings));
+    const saveSettings = async () => {
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ settings }),
+        });
+      } catch (error) {
+        console.error('Error saving settings:', error);
       }
-    } catch (error) {
-      console.error('Error saving settings:', error);
-    }
+    };
+
+    // Debounce saving to avoid rapid writes
+    const debounceSave = setTimeout(saveSettings, 1000);
+    return () => clearTimeout(debounceSave);
+
   }, [settings, appInitialized]);
 
   // Function to update settings
   const updateSettings = (newSettings: Partial<Settings>) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+    setSettings((prevSettings) => ({
+      ...prevSettings,
+      ...newSettings,
+    }));
   };
 
   return (

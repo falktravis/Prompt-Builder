@@ -1,16 +1,18 @@
+'use client';
+
 /**
  * TreeNode component
  * Renders an individual node (folder or component) in the tree view
  */
 
 import React, { useState } from "react";
-import { FolderType, TreeNode, ComponentType } from "../../../types";
+import { FolderType, TreeNode, ComponentType } from "@/types";
 import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
-import ComponentIcon from "./ComponentIcon";
+import ComponentIcon from "./ComponentIcon"; // Assuming this path is correct
 
 // Constants
 const INDENT = 20;
@@ -20,19 +22,17 @@ interface TreeNodeProps {
   level: number;
   selectedNode: TreeNode | null;
   setSelectedNode: (node: TreeNode) => void;
-  expandedFolders: number[];
-  setExpandedFolders: React.Dispatch<React.SetStateAction<number[]>>;
-  isAddingFolder: number | null;
+  isAddingFolder: string | null; // Changed from number | null
   newFolderName: string;
   setNewFolderName: (name: string) => void;
-  // Update to match the useRef return type
   newFolderInputRef: React.RefObject<HTMLInputElement>;
   handleKeyDown: (e: React.KeyboardEvent) => void;
   submitNewFolder: () => void;
-  startAddFolder: (folderId: number) => void;
-  openAddComponentModal: (folderId: number) => void;
+  startAddFolder: (folderId: string) => void; // Changed from number
+  openAddComponentModal: (folderId: string) => void; // Changed from number
   openEditComponentModal: (component: TreeNode) => void;
-  handleDeleteNode: (nodeId: number) => void;
+  handleDeleteNode: (nodeId: string) => void; // Changed from number
+  handleToggleFolderExpand: (folderId: string) => void; // Added
 }
 
 const TreeNodeComponent: React.FC<TreeNodeProps> = ({
@@ -40,8 +40,6 @@ const TreeNodeComponent: React.FC<TreeNodeProps> = ({
   level,
   selectedNode,
   setSelectedNode,
-  expandedFolders,
-  setExpandedFolders,
   isAddingFolder,
   newFolderName,
   setNewFolderName,
@@ -52,24 +50,18 @@ const TreeNodeComponent: React.FC<TreeNodeProps> = ({
   openAddComponentModal,
   openEditComponentModal,
   handleDeleteNode,
+  handleToggleFolderExpand, // Added
 }) => {
   const isFolder = node.type === "folder";
   const isComponent = node.type === "component";
-  const isExpanded = isFolder && expandedFolders.includes(node.id);
+  const isExpanded = isFolder && (node as FolderType).expanded; // Changed
   const isSelected = selectedNode && selectedNode.id === node.id;
   const [isHovering, setIsHovering] = useState(false);
   
   // Toggle folder expansion
   const toggleExpand = () => {
     if (!isFolder) return;
-    
-    setExpandedFolders((prev) => {
-      if (isExpanded) {
-        return prev.filter((id) => id !== node.id);
-      } else {
-        return [...prev, node.id];
-      }
-    });
+    handleToggleFolderExpand(node.id); // Changed
   };
   
   // Handle node selection
@@ -136,20 +128,27 @@ const TreeNodeComponent: React.FC<TreeNodeProps> = ({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsHovering(false);
-    // Folder-to-folder drop logic (existing, can be kept or adjusted if needed for sidebar reordering)
     if (isFolder) {
-      const draggedNodeId = parseInt(e.dataTransfer.getData("text/plain"), 10);
-      if (draggedNodeId === node.id) return; 
+      // Data might be stringified JSON or just the ID. Assuming ID for now.
+      const draggedData = e.dataTransfer.getData("application/json") || e.dataTransfer.getData("text/plain");
+      let draggedNodeId: string | null = null;
+      try {
+        const parsedData = JSON.parse(draggedData);
+        draggedNodeId = parsedData.id || parsedData; // Handle if it's an object with id or just the id string
+      } catch (error) {
+        draggedNodeId = draggedData; // Fallback if not JSON
+      }
 
+      if (!draggedNodeId || draggedNodeId === node.id) return; 
+
+      // Dispatch custom event with string IDs
       if (window.dispatchEvent) {
         const dropEvent = new CustomEvent("node-dropped", {
-          detail: { draggedNodeId, targetNodeId: node.id },
+          detail: { draggedNodeId: draggedNodeId, targetNodeId: node.id }, // node.id is already string
         });
         window.dispatchEvent(dropEvent);
       }
     }
-    // If a component is dropped onto another component in the sidebar, do nothing for now.
-    // The main drop handling for prompt building is in PromptEditor.
   };
   
   // Delete confirmation
@@ -267,8 +266,6 @@ const TreeNodeComponent: React.FC<TreeNodeProps> = ({
           level={level + 1}
           selectedNode={selectedNode}
           setSelectedNode={setSelectedNode}
-          expandedFolders={expandedFolders}
-          setExpandedFolders={setExpandedFolders}
           isAddingFolder={isAddingFolder}
           newFolderName={newFolderName}
           setNewFolderName={setNewFolderName}
@@ -279,6 +276,7 @@ const TreeNodeComponent: React.FC<TreeNodeProps> = ({
           openAddComponentModal={openAddComponentModal}
           openEditComponentModal={openEditComponentModal}
           handleDeleteNode={handleDeleteNode}
+          handleToggleFolderExpand={handleToggleFolderExpand} // Added
         />
       ))}
     </div>

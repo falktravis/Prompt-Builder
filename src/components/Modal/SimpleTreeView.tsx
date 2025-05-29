@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * SimpleTreeView component
  * Read-only tree view for displaying library components in the CommunityComponentsModal.
@@ -16,8 +18,8 @@ interface SimpleTreeViewProps {
 }
 
 // Helper function to get all component IDs from nodes recursively
-const getAllComponentIds = (nodes: TreeNode[]): number[] => {
-  let ids: number[] = [];
+const getAllComponentIds = (nodes: TreeNode[]): string[] => {
+  let ids: string[] = [];
   for (const node of nodes) {
     if (node.type === 'component') {
       ids.push(node.id);
@@ -30,7 +32,7 @@ const getAllComponentIds = (nodes: TreeNode[]): number[] => {
 };
 
 const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({ nodes, level = 0, expandAllNodeContents = false, disableNodeContentToggle = false }) => {
-  const [expandedContentNodeIds, setExpandedContentNodeIds] = useState<Set<number>>(() => {
+  const [expandedContentNodeIds, setExpandedContentNodeIds] = useState<Set<string>>(() => {
     if (expandAllNodeContents) {
       // If expandAllNodeContents is true, initialize with all component IDs
       return new Set(getAllComponentIds(nodes));
@@ -48,7 +50,7 @@ const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({ nodes, level = 0, expan
     // For simplicity, we only set all if true.
   }, [nodes, expandAllNodeContents]);
 
-  const handleNodeHeaderClick = (nodeId: number, nodeType: string) => {
+  const handleNodeHeaderClick = (nodeId: string, nodeType: string) => {
     // Only allow toggling if disableNodeContentToggle is false
     if (!disableNodeContentToggle && nodeType === 'component') {
       setExpandedContentNodeIds(prev => {

@@ -1,10 +1,7 @@
 /**
  * Modal styles
  */
-
-@import "../../styles/variables/colors";
-@import "../../styles/variables/typography";
-@import "../../styles/variables/mixins";
+@use "sass:color"; // Ensure sass:color is imported
 
 /* Modal overlay for Add/Edit Component screens */
 .modal-overlay {
@@ -28,7 +25,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   width: 65vw;
   overflow-y: auto;
-  @include custom-scrollbar();
+  @include mixins.custom-scrollbar();
   position: relative;
 }
 
@@ -37,13 +34,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid $dark-gray;
+  border-bottom: 1px solid colors.$dark-gray;
 
   h3 {
     margin: 0;
-    font-size: $font-size-xl;
+    font-size: typography.$font-size-xl;
     font-weight: 600;
-    color: $text-color;
+    color: colors.$text-color;
   }
 }
 
@@ -64,7 +61,7 @@
 label {
   display: block;
   margin-bottom: 0.15rem;
-  color: $text-color;
+  color: colors.$text-color;
   font-size: 1.15rem;
   font-weight: 500;
 }
@@ -82,14 +79,14 @@ select {
   padding: 0.75rem;
   font-size: 1rem;
   margin-bottom: 1rem;
-  font-family: $primary-font;
+  font-family: typography.$primary-font;
   background-color: #555;
   border: 1px solid #777;
-  color: $text-color;
+  color: colors.$text-color;
   border-radius: 0.25rem;
 
   &:focus {
-    border-color: $accent-color;
+    border-color: colors.$accent-color;
     outline: none;
   }
 }
@@ -116,7 +113,7 @@ input[type="checkbox"] {
 
 small {
   display: block;
-  color: $light-gray;
+  color: colors.$light-gray;
   font-size: 0.875rem;
   margin-top: 0.25rem;
   margin-bottom: 1rem;
@@ -124,33 +121,33 @@ small {
 
 /* Form action buttons */
 .form-actions {
-  @include flex(row, flex-end, center);
+  @include mixins.flex(row, flex-end, center);
   gap: 0.75rem;
   margin-top: 1.5rem;
   width: 97%;
   margin: auto;
 
   button{
-    @include btn();
+    @include mixins.btn();
   }
   
   .primary {
     background-color: transparent;
-    border: 1px solid $accent-color;
+    border: 1px solid colors.$accent-color;
     border-radius: 0.25rem;
-    color: $accent-color;
+    color: colors.$accent-color;
     font-size: 1rem;
     cursor: pointer;
     
     &:hover {
-      background-color: rgba($accent-color, 0.1);
+      background-color: rgba(colors.$accent-color, 0.1);
     }
   }
 }
 
 /* Modal close button styling */
 .modal-close {
-  @include btn();
+  @include mixins.btn();
   width: 32px;
   height: 32px;
   display: flex;
@@ -159,10 +156,10 @@ small {
   font-size: 1.5rem;
   font-weight: bold;
   background-color: transparent;
-  color: $light-gray;
+  color: colors.$light-gray;
   
   &:hover {
-    color: $text-color;
+    color: colors.$text-color;
     background-color: rgba(255, 255, 255, 0.1);
   }
 }
@@ -182,14 +179,14 @@ small {
 
   h4 {
     margin-bottom: 0.15rem;
-    color: $accent-color;
+    color: colors.$accent-color;
     font-size: 1.5rem;
     margin-top: 0.25rem;
   }
 
   p{
     margin-bottom: 0.5rem;
-    color: $light-gray;
+    color: colors.$light-gray;
     font-size: 1rem;
 
     a{
@@ -210,11 +207,11 @@ small {
   }
   
   .settings-toggle {
-    @include flex(row, space-between, center);
+    @include mixins.flex(row, space-between, center);
   }
   
   .settings-toggle {
-    @include flex(row, space-between, center);
+    @include mixins.flex(row, space-between, center);
     margin: 1rem 0;
   }
     
@@ -230,7 +227,7 @@ small {
     }
     
     .reset-default-btn {
-      color: $light-gray;
+      color: colors.$light-gray;
       padding: 0.25rem 0.5rem;
       font-size: 0.8rem;
       margin-left: 0.5rem;
@@ -240,7 +237,7 @@ small {
 }
 
 .reset-btn {
-  @include btn();
+  @include mixins.btn();
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
@@ -264,17 +261,17 @@ small {
   }
 
   .library-file-item {
-    background-color: lighten($dark-gray, 5%);
+    background-color: color.adjust(colors.$dark-gray, $lightness: 3%);
     border-radius: 4px;
-    border: 1px solid darken($dark-gray, 5%);
+    border: 1px solid color.adjust(colors.$dark-gray, $lightness: -3%);
 
     .file-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       padding: 0.75rem 1rem;
-      background-color: lighten($dark-gray, 8%);
-      border-bottom: 1px solid darken($dark-gray, 5%);
+      background-color: color.adjust(colors.$dark-gray, $lightness: 8%);
+      border-bottom: 1px solid color.adjust(colors.$dark-gray, $lightness: -5%);
       border-top-left-radius: 4px;
       border-top-right-radius: 4px;
 
@@ -306,24 +303,24 @@ small {
       }
 
       .import-button {
-        @include btn();
+        @include mixins.btn();
         padding: 0.4rem 0.8rem;
         font-size: 0.9rem;
-        background-color: $accent-color;
+        background-color: colors.$accent-color;
         border: none;
         border-radius: 2px;
 
         &:hover {
-          background-color: darken($accent-color, 10%);
+          background-color: color.adjust(colors.$accent-color, $lightness: -10%);
         }
 
         &.importing {
-          background-color: $dark-gray;
+          background-color: colors.$dark-gray;
           cursor: default;
         }
 
         &.imported {
-          background-color: $success-color;
+          background-color: colors.$success-color;
           display: flex;
           flex-direction: row-reverse;
           align-items: center;
@@ -336,26 +333,26 @@ small {
 
   .manifest-error,
   .file-error {
-    color: $error-color;
-    background-color: rgba($error-color, 0.1);
+    color: colors.$error-color;
+    background-color: rgba(colors.$error-color, 0.1);
     padding: 0.75rem;
     border-radius: 4px;
     margin-bottom: 1rem;
   }
 }
 
-// Styles for SimpleTreeView (can be co-located or separate)
+/* Styles for SimpleTreeView (can be co-located or separate) */
 .simple-tree-view {
   .simple-tree-node {
     padding: 0.15rem 0.5rem;
     font-size: 1.05rem;
-    color: $text-color;
+    color: colors.$text-color;
     border-radius: 4px;
     margin-bottom: 0.2rem;
 
     &.component{
       &:hover {
-        background-color: $hover-gray;
+        background-color: colors.$hover-gray;
       }
     }
 
@@ -383,17 +380,35 @@ small {
     }
 
     .component-content-details {
-      background-color: lighten($dark-gray, 3%);
-      color: $light-gray;
+      background-color: color.adjust(colors.$dark-gray, $lightness: 3%);
+      color: colors.$light-gray;
       padding: 0.5rem 0.75rem;
       margin: 0.25rem 0;
       border-radius: 2px;
       font-size: 0.85rem;
       white-space: pre-wrap;
-      border: 1px solid darken($dark-gray, 3%);
+      border: 1px solid color.adjust(colors.$dark-gray, $lightness: -3%);
       overflow-y: auto;
-      @include custom-scrollbar();
+      @include mixins.custom-scrollbar();
+    }
+
+    .simple-tree-node-content {
+      &:hover {
+        background-color: color.adjust(colors.$dark-gray, $lightness: 8%);
+      }
+      border-bottom: 1px solid color.adjust(colors.$dark-gray, $lightness: -5%);
     }
   }
   // Nested tree view styling is handled by padding in the component jsx
+}
+
+// Specific styles for buttons within .confirm-delete-modal
+.confirm-delete-modal {
+  .form-actions {
+    button.danger {
+      &:hover {
+        background-color: color.adjust(colors.$accent-color, $lightness: -10%);
+      }
+    }
+  }
 }

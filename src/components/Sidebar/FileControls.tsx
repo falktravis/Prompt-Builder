@@ -1,89 +1,42 @@
+'use client';
+
 /**
  * FileControls component
  * Handles file import/export operations for component library
  */
 
 import React, { useRef } from "react";
-import { useTreeContext } from "../../contexts/TreeContext";
-import { FolderType, TreeNode } from "../../types";
-import { mergeTreeData } from "../../utils/treeUtils";
-import { useAppContext } from "../../contexts/AppContext"; // Added
+import { useTreeContext } from "@/contexts/TreeContext";
+// FolderType is used by mergeTreeData and the types of treeData/parsedTreeFromLegacyFile
+import { FolderType } from "@/types"; 
+import { mergeTreeData } from "@/utils/treeUtils";
+import { loadJSONFile } from "@/utils/fileUtils"; // Added: To use the correct parsing logic
+import { v4 as uuidv4 } from 'uuid'; // Added: For generating string IDs
 
 const FileControls: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { treeData, setTreeData } = useTreeContext();
-  const { setCommunityModalOpen } = useAppContext(); // Added
-  
-  /**
-   * Detects and parses various file formats to extract tree data
-   * Supports old format (array or single folder) and new format ({tree, prompts})
-   */
-  const parseLoadedData = (data: any): FolderType[] => {
-    try {
-      // Case 1: New format with tree property
-      if (data && typeof data === 'object' && data.tree && Array.isArray(data.tree)) {
-        return data.tree;
-      }
-      
-      // Case 2: Old format - array of nodes directly
-      if (Array.isArray(data)) {
-        return data as FolderType[];
-      }
-      
-      // Case 3: Old format - single folder with children
-      if (data && typeof data === 'object' && data.type === "folder" && Array.isArray(data.children)) {
-        return [data as FolderType];
-      }
-      
-      throw new Error("Unrecognized data format");
-    } catch (error) {
-      console.error("Error parsing data:", error);
-      throw new Error(`Failed to parse data: ${(error as Error).message}`);
-    }
-  };
-  
+  const { treeData, setTreeData } = useTreeContext(); // treeData is FolderType[]
+
   // Handle file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     try {
-      // Read the file
-      const text = await file.text();
-      const data = JSON.parse(text);
-      
-      // Parse the data to extract tree structure
-      const parsedTreeData = parseLoadedData(data);
-      
-      // Validate tree structure
-      if (!parsedTreeData || parsedTreeData.length === 0) {
-        throw new Error("No valid components or folders found in file");
+      const { tree: parsedTreeFromLegacyFile } = await loadJSONFile(file);
+
+      // Validate tree structure (parsedTreeFromLegacyFile is FolderType[])
+      if (!parsedTreeFromLegacyFile) { // Simplified check: if it's undefined or null
+        throw new Error("No valid components or folders found in file. The 'tree' property might be missing or invalid.");
       }
       
-      // Update tree data using the new merge logic
-      setTreeData((currentTreeData) => {
-        // Initialize a robust ID generator for this merge operation.
-        let maxExistingId = 0;
-        const findMaxId = (nodes: TreeNode[]): void => {
-          for (const node of nodes) {
-            maxExistingId = Math.max(maxExistingId, node.id);
-            if (node.type === 'folder') {
-              findMaxId(node.children);
-            }
-          }
-        };
-        findMaxId(currentTreeData);
-
-        let nextIdCounter = Math.max(Date.now(), maxExistingId + 1);
-
-        const generateId = (): number => {
-          const newId = nextIdCounter;
-          nextIdCounter += 1;
-          return newId;
-        };
-        
-        // Ensure parsedTreeData is treated as FolderType[] as expected by mergeTreeData
-        return mergeTreeData(currentTreeData, parsedTreeData as FolderType[], generateId);
+      // Update tree data
+      setTreeData((currentTreeData: FolderType[]) => { // currentTreeData is FolderType[]
+        // The custom numeric ID generation logic (maxExistingId, findMaxId, nextIdCounter, local generateId) is removed.
+        // parsedTreeFromLegacyFile (FolderType[]) already has string UUIDs.
+        // We pass uuidv4 to mergeTreeData; it will use this if it needs to generate IDs 
+        // for new structural nodes created during the merge process itself.
+        return mergeTreeData(currentTreeData, parsedTreeFromLegacyFile, uuidv4);
       });
       
       // Reset the file input
@@ -96,7 +49,7 @@ const FileControls: React.FC = () => {
     }
   };
   
-  // Handle file save
+  // Handle file save - This function remains unchanged
   const handleSave = () => {
     try {
       // Only export tree data, not prompts
@@ -120,13 +73,6 @@ const FileControls: React.FC = () => {
 
   return (
     <div className="file-controls">
-      <button
-        className="file-btn community-library-btn-fullwidth"
-        onClick={() => setCommunityModalOpen(true)}
-        title="Community Library"
-      >
-        Community Library
-      </button>
       <div className="load-save-controls"> { /* Added wrapper */ }
         <input
           type="file"

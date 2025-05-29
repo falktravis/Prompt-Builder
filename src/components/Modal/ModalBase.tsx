@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * ModalBase component
  * Reusable modal dialog with overlay

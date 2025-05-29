@@ -1,15 +1,17 @@
+'use client';
+
 /**
  * ActionBar component
  * Copy buttons and actions for prompt output
  */
 
 import React from "react";
-import { usePromptContext } from "../../contexts/PromptContext";
+import { usePromptContext } from "@/contexts/PromptContext";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import AddIcon from '@mui/icons-material/Add'; // Import AddIcon
+import AddIcon from '@mui/icons-material/Add';
 
 interface ActionBarProps {
-  activePromptId: number | null;
+  activePromptId: string | null; // Changed from number
   systemPrompt: string;
   markdownEnabled: boolean;
 }
@@ -19,17 +21,17 @@ const ActionBar: React.FC<ActionBarProps> = ({
   systemPrompt,
   markdownEnabled 
 }) => {
-  const { getCompiledPromptText, addNewSectionForEditing } = usePromptContext(); // Added addNewSectionForEditing
+  const { getCompiledPromptText, addNewSectionForEditing } = usePromptContext();
 
   // Copy prompt to clipboard
   const copyPrompt = () => {
     if (!activePromptId) return;
     
-    let promptText = getCompiledPromptText(activePromptId);
+    let promptText = getCompiledPromptText(activePromptId); // activePromptId is now string
 
     if (markdownEnabled && systemPrompt) {
       // If markdown is enabled, format the prompt text accordingly
-      promptText = systemPrompt + "\n\n" + promptText;
+      promptText = systemPrompt + "\\n\\n" + promptText;
     }
 
     navigator.clipboard.writeText(promptText);
@@ -43,8 +45,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
   };
 
   return (
-    <div className="action-bar">
-      <div className="action-bar-buttons-group">
+    <div className="action-bar-container"> {/* Added a container div */}
+      <div className="action-bar-buttons"> {/* Group buttons for styling if needed */}
         <button
           className="copy-btn"
           onClick={copyPrompt}
@@ -62,11 +64,6 @@ const ActionBar: React.FC<ActionBarProps> = ({
           <AddIcon />
           <span>New Section</span>
         </button>
-      </div>
-      <div className="deprecation-message">
-        <p>This version of Prompt Builder has been <strong>deprecated</strong>. Please save your components and migrate to the (completely free) centralized version on our website.</p>
-        <a href="https://github.com/falktravis/Prompt-Builder/discussions/5" target="_blank" rel="noopener noreferrer" id="more-info">More Info</a>
-        <a href="https://buildprompts.ai" target="_blank" rel="noopener noreferrer" id="new-version">New Version</a>
       </div>
     </div>
   );

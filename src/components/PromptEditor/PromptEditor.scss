@@ -1,10 +1,7 @@
 /**
  * PromptEditor component styles
  */
-
- @import "../../styles/variables/colors";
- @import "../../styles/variables/mixins";
-  @import "../../styles/variables/typography";
+ @use "sass:color";
  
  // Main content area
  #content {
@@ -16,44 +13,44 @@
    
    // Empty state when no prompts are available
    .empty-state {
-     @include flex(column, center, center);
+     @include mixins.flex(column, center, center);
      height: 100%;
      
      p {
        margin-bottom: 1rem;
-       color: $light-gray;
+       color: colors.$light-gray;
      }
      
      button {
-       @include btn();
+       @include mixins.btn();
        padding: 0.75rem 1.5rem;
-       background-color: $accent-color;
+       background-color: colors.$accent-color;
        color: black;
        font-weight: 500;
        
        &:hover {
-         background-color: darken($accent-color, 10%);
+         background-color: color.adjust(colors.$accent-color, $lightness: -10%);
        }
      }
    }
    
    // Tabs navigation
    .prompt-tabs {
-     @include flex(row, flex-start, center);
-     border-bottom: 1px solid $dark-gray;
+     @include mixins.flex(row, flex-start, center);
+     border-bottom: 1px solid colors.$dark-gray;
      overflow-x: auto;
-     @include custom-scrollbar(6px, $dark-gray);
-     background-color: rgba($side-bar-bg, 1);
+     @include mixins.custom-scrollbar(6px, colors.$dark-gray);
+     background-color: rgba(colors.$side-bar-bg, 1);
      
      .prompt-tab {
-       @include flex(row, space-between, center);
+       @include mixins.flex(row, space-between, center);
        padding: 0.2rem 0;
        padding-left: 0.75rem;
        cursor: pointer;
        min-width: 120px;
        max-width: 200px;
        transition: background-color 0.2s ease;
-       font-size: $font-size-sm;
+       font-size: typography.$font-size-sm;
        position: relative;
        overflow: visible;
 
@@ -62,7 +59,7 @@
          display: block;
          width: 1.5px;
          height: 70%;
-         background-color: $light-gray;
+         background-color: colors.$light-gray;
          position: absolute;
          left: 0;
          border-radius: 2px;
@@ -79,8 +76,8 @@
        }
        
        &.active {
-         background-color: rgba($accent-color, 0.1);
-         border-bottom: 2px solid $accent-color;
+         background-color: rgba(colors.$accent-color, 0.1);
+         border-bottom: 2px solid colors.$accent-color;
 
          &::before {
           display: none;
@@ -96,11 +93,11 @@
        }
        
        .tab-actions {
-         @include flex(row, flex-end, center);
+         @include mixins.flex(row, flex-end, center);
          margin-left: 0.5rem;
          
          .action-btn {
-           @include btn();
+           @include mixins.btn();
            padding: 0.25rem;
            font-size: 0.9rem;
            
@@ -118,13 +115,13 @@
          width: 100%;
          padding: 0.25rem;
          background-color: rgba(0, 0, 0, 0.3);
-         border: 1px solid $dark-gray;
+         border: 1px solid colors.$dark-gray;
          border-radius: 3px;
-         color: $text-color;
+         color: colors.$text-color;
          
          &:focus {
            outline: none;
-           border-color: $accent-color;
+           border-color: colors.$accent-color;
          }
        }
      }
@@ -141,7 +138,7 @@
           display: block;
           width: 1.5px;
           height: 70%;
-          background-color: $light-gray;
+          background-color: colors.$light-gray;
           position: absolute;
           left: -0.35rem;
           top: 50%;
@@ -151,7 +148,7 @@
         
         .add-prompt-tab,
         .duplicate-prompt-tab {
-          @include flex(row, center, center);
+          @include mixins.flex(row, center, center);
           border-radius: 6px;
           background-color: rgba(0, 0, 0, 0.3);
           cursor: pointer;
@@ -178,36 +175,34 @@
     padding: 0 1.5rem; // Align with sections-container horizontal padding
   
     .prompt-main-title-display {
-      font-size: $font-size-xl;
+      font-size: typography.$font-size-xl;
       font-weight: 600;
-      color: $text-color;
+      color: colors.$text-color;
       cursor: text;
       padding: 0.3rem 0.5rem;
       margin: 0.7rem 0;
       border-radius: 2px; 
       transition: background-color 0.2s ease;
       display: inline-block; // To prevent full width and allow padding to work as expected
-      font-family: 'Open Sans';
   
       &:hover {
-        background-color: rgba($text-color, 0.1); // Subtle hover effect
+        background-color: rgba(colors.$text-color, 0.1); // Subtle hover effect
       }
     }
   
     .prompt-main-title-input {
-      font-size: $font-size-xl; 
+      font-size: typography.$font-size-xl; 
       font-weight: 600;      
-      color: $text-color;
+      color: colors.$text-color;
       background-color: transparent;
       border: none;
       border-radius: 4px;
-      border: 2px solid $text-color; 
+      border: 2px solid colors.$text-color; 
       outline: none;
       width: 100%; // Take full width of its container
       padding: 0.3rem calc(0.5rem - 2px);
       margin: calc(0.7rem - 4px) 0;
       box-sizing: border-box;
-      font-family: 'Open Sans';
     }
   }
    
@@ -215,17 +210,17 @@
    .sections-container {
      flex: 1;
      overflow-y: auto;
-     @include custom-scrollbar();
+     @include mixins.custom-scrollbar();
      padding-right: 0.5rem;
      padding: 1.5rem;
      padding-top: 0.5rem;
      position: relative; // Added for insertion indicator positioning
 
-     .context { &::before{ background-color: $context-color; } }
-     .format { &::before{ background-color: $format-color; } }
-     .instruction { &::before{ background-color: $instruction-color; } }
-     .role { &::before{ background-color: $role-color; } }
-     .style { &::before{ background-color: $style-color; } }
+     .context { &::before{ background-color: colors.$context-color; } }
+     .format { &::before{ background-color: colors.$format-color; } }
+     .instruction { &::before{ background-color: colors.$instruction-color; } }
+     .role { &::before{ background-color: colors.$role-color; } }
+     .style { &::before{ background-color: colors.$style-color; } }
 
      .section{
       position: relative;
@@ -252,18 +247,18 @@
       }
 
       .section-header{
-        @include flex(row, space-between, center);
-        color: $light-gray;
+        @include mixins.flex(row, space-between, center);
+        color: colors.$light-gray;
         font-size: 1.1rem;
         cursor: pointer;
 
         .section-info{
-          @include flex(row, flex-start, center);
+          @include mixins.flex(row, flex-start, center);
           flex-grow: 1;
           min-width: 0;
 
           .section-toggle{
-            @include flex(row, center, center);
+            @include mixins.flex(row, center, center);
             width: 1.5rem;
             height: 1.5rem;
             margin-right: 0.5rem;
@@ -271,7 +266,7 @@
           }
 
           .section-edit{
-            @include flex(row, center, center);
+            @include mixins.flex(row, center, center);
             
             select, input{
               height: 100%;
@@ -282,14 +277,14 @@
               background: transparent;
               border: none;
               outline: none;
-              color: $light-gray;
+              color: colors.$light-gray;
               width: fit-content;
               cursor: pointer;
             }
 
             input{
               margin-right: 0.3rem;
-              border-bottom: 1px solid $accent-color;
+              border-bottom: 1px solid colors.$accent-color;
               cursor: text;
               min-width: 100px;
               box-sizing: border-box;
@@ -297,15 +292,15 @@
           }
 
           .section-display{
-            @include flex(row, center, center);
+            @include mixins.flex(row, center, center);
           }
         }
 
         .delete-btn{
-          color: $light-gray;
+          color: colors.$light-gray;
 
           &:hover{
-            color: $text-color;
+            color: colors.$text-color;
           }
         }
       }
@@ -317,12 +312,12 @@
           background: transparent;
           border: none;
           outline: none;
-          color: $text-color;
+          color: colors.$text-color;
           font-size: 1.25rem;
           line-height: 1.25rem;
           resize: none;
           overflow: hidden;
-          font-family: $primary-font;
+          font-family: typography.$primary-font;
           min-height: 0;
           padding: 0.25rem;
           padding-bottom: 0;
@@ -334,7 +329,7 @@
           position: absolute;
           right: 2rem;
           top: auto;
-          background-color: $accent-color;
+          background-color: colors.$accent-color;
           border: none;
           border-radius: 0.25rem;
           padding: 0.125rem 0.5rem;
@@ -367,7 +362,7 @@
             font-weight: bold;
 
             &:hover {
-              background-color: lighten(#08D9D6, 10%); // Lighter accent color on hover
+              background-color: color.adjust(#08D9D6, $lightness: 10%); // Lighter accent color on hover
             }
           }
         }
@@ -380,83 +375,42 @@
       left: 0.75rem; // To align with section content, considering padding of sections-container
       width: calc(100% - 1.5rem); // Adjust width considering padding
       height: 2px;
-      background-color: $accent-color;
+      background-color: colors.$accent-color;
       pointer-events: none;
       z-index: 10;
       transition: top 0.1s ease-out;
     }
    }
 
-   // Action bar
-   .action-bar {
-     @include flex(row, space-between, center); // Changed from flex-start to space-between
-     margin-bottom: 0.5rem;
-     padding: 0 1rem;
+  // Action bar
+  .action-bar-container {
+    @include mixins.flex(row, space-between, center);
+    margin-bottom: 0.5rem;
+    padding: 0 1rem;
 
-      .action-bar-buttons{
-        @include flex(row, center, center);
-        gap: 0.5rem;
-      }
-     
-     .copy-btn,
-     .new-section-btn, // Added new-section-btn
-     .copy-with-system-btn {
-      @include btn();
-      @include flex(row, center, center);
+    .action-bar-buttons{
+      @include mixins.flex(row, center, center);
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .copy-btn,
+    .new-section-btn, // Added new-section-btn
+    .copy-with-system-btn {
+      @include mixins.btn();
+      @include mixins.flex(row, center, center);
       padding: 0.5rem 1rem;
       border-radius: 4px;
-      background-color: $dark-gray;
+      background-color: colors.$dark-gray;
       margin-right: 1rem;
-      text-wrap: nowrap; // Prevent text wrapping
       
       &:hover {
-        background-color: $hover-gray;
+        background-color: colors.$hover-gray;
       }
       
       svg {
         margin-right: 0.5rem;
       }
     }
-
-    .deprecation-message {
-      @include flex(row, center, center); // Align paragraph and links
-      padding: 1rem; // Adjusted padding
-      background-color: rgba(0, 0, 0, 0.2); // Similar to auth-reminder
-      border-radius: 4px;
-      color: $light-gray; // Use variable for light gray
-      font-size: 1rem; // Similar to auth-reminder
-      gap: 0.75rem; // Space between p and a tags, and between a tags
-
-      p {
-        margin: 0; // Remove default paragraph margin
-      }
-
-      #more-info {
-        color: $accent-color; // Use accent color for links, or a specific link color variable if available
-        text-decoration: underline;
-        text-wrap: nowrap; // Prevent text wrapping
-        margin-right: 1rem;
-
-        &:hover {
-          color: darken($accent-color, 10%); // Darken on hover
-        }
-      }
-
-      #new-version {
-        color: $accent-color;
-        text-decoration: none;
-        border-radius: 5px;
-        border: 2px solid $accent-color;
-        box-shadow: $accent-color 0px 0px 20px 0px;
-        transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
-        padding: 0.5rem 1rem;
-        white-space: nowrap;
-
-        &:hover {
-          box-shadow: $accent-color 0px 0px 30px 0px; // Slightly larger shadow on hover
-          transform: scale(1.05); // Slightly enlarge on hover
-        }
-      }
-    }
-   }
   }
+ }

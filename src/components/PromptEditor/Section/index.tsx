@@ -1,24 +1,26 @@
+'use client';
+
 /**
  * Section component
  * Individual section within a prompt
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { Section as SectionType, ComponentType } from "../../../types";
-import { usePromptContext } from "../../../contexts/PromptContext";
-import { useTreeContext } from "../../../contexts/TreeContext";
-import SectionHeader from "./SectionHeader.tsx";
-import useAutosizeTextArea from "../../../hooks/useAutosizeTextArea";
-import { usePrompts } from "../../../hooks/usePrompts"; // Added
+import { Section as SectionType, ComponentType } from "@/types";
+import { usePromptContext } from "@/contexts/PromptContext";
+import { useTreeContext } from "@/contexts/TreeContext";
+import SectionHeader from "./SectionHeader";
+import useAutosizeTextArea from "@/hooks/useAutosizeTextArea";
+import { usePrompts } from "@/hooks/usePrompts"; // Added
 
 interface SectionProps {
   section: SectionType;
-  promptId: number;
+  promptId: string;
   nameInputRefCallback?: (el: HTMLInputElement | null) => void; // Added for focusing
   index: number; // Added: index of the section
 }
 
-const findComponentById = (treeData: any[], id: number): ComponentType | null => {
+const findComponentById = (treeData: any[], id: string): ComponentType | null => {
   for (const node of treeData) {
     if (node.id === id && node.type === "component") {
       return node as ComponentType;

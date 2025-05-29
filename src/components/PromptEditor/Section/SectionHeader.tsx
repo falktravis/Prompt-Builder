@@ -1,18 +1,20 @@
+'use client';
+
 /**
  * SectionHeader component
  * Header for an individual prompt section
  */
 
 import React, { useState, useRef, useEffect } from "react";
-import { Section } from "../../../types";
-import { usePromptContext } from "../../../contexts/PromptContext";
+import { Section } from "@/types";
+import { usePromptContext } from "@/contexts/PromptContext";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import CloseIcon from '@mui/icons-material/Close';
 
 interface SectionHeaderProps {
   section: Section;
-  promptId: number;
+  promptId: string;
   onToggle: () => void;
   onDelete: () => void;
   nameInputRefCallback?: (el: HTMLInputElement | null) => void; // Added for focusing

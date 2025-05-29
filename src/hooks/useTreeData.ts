@@ -18,7 +18,7 @@ export const useTreeData = () => {
    * @param nodeId ID of the node to find
    * @returns The node if found, null otherwise
    */
-  const findNodeById = useCallback((nodeId: number): TreeNode | null => {
+  const findNodeById = useCallback((nodeId: string): TreeNode | null => {
     const findNode = (nodes: TreeNode[]): TreeNode | null => {
       for (const node of nodes) {
         if (node.id === nodeId) {
@@ -42,7 +42,7 @@ export const useTreeData = () => {
    * @param componentId ID of the component to find
    * @returns The component if found, null otherwise
    */
-  const findComponentById = useCallback((componentId: number): ComponentType | null => {
+  const findComponentById = useCallback((componentId: string): ComponentType | null => {
     const node = findNodeById(componentId);
     return node && node.type === "component" ? node as ComponentType : null;
   }, [findNodeById]);
@@ -52,7 +52,7 @@ export const useTreeData = () => {
    * @param nodeId ID of the node to find the parent for
    * @returns The parent folder if found, null otherwise
    */
-  const findParentNode = useCallback((nodeId: number): FolderType | null => {
+  const findParentNode = useCallback((nodeId: string): FolderType | null => {
     const findParent = (nodes: TreeNode[]): FolderType | null => {
       for (const node of nodes) {
         if (node.type === "folder") {
@@ -77,10 +77,10 @@ export const useTreeData = () => {
    * @param nodeId ID of the node to get the path for
    * @returns Array of node names representing the path
    */
-  const getNodePath = useCallback((nodeId: number): string[] => {
+  const getNodePath = useCallback((nodeId: string): string[] => {
     const path: string[] = [];
     
-    const buildPath = (currentId: number): boolean => {
+    const buildPath = (currentId: string): boolean => {
       const node = findNodeById(currentId);
       if (!node) return false;
       

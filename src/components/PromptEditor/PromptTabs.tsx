@@ -1,24 +1,26 @@
+'use client';
+
 /**
  * PromptTabs component
  * Tab navigation between different prompts
  */
 
 import React from "react";
-import { Prompt } from "../../types";
-import { usePromptContext } from "../../contexts/PromptContext";
+import { Prompt } from "@/types";
+import { usePromptContext } from "@/contexts/PromptContext";
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'; // Add this line
 
 interface PromptTabsProps {
   prompts: Prompt[];
-  activePromptId: number | null;
-  setActivePromptId: (id: number) => void;
-  editingPromptName: number | null;
+  activePromptId: string | null; // Changed from number
+  setActivePromptId: (id: string) => void; // Changed from number
+  editingPromptName: string | null; // Changed from number
   editingPromptNameValue: string;
   setEditingPromptNameValue: (value: string) => void;
-  startEditingPromptName: (id: number, name: string) => void;
-  savePromptName: (id: number) => void;
+  startEditingPromptName: (id: string, name: string) => void; // Changed from number
+  savePromptName: (id: string) => void; // Changed from number
 }
 
 const PromptTabs: React.FC<PromptTabsProps> = ({
@@ -36,18 +38,18 @@ const PromptTabs: React.FC<PromptTabsProps> = ({
   // Handle adding a new prompt
   const handleAddPrompt = () => {
     const newPrompt = addPrompt();
-    setActivePromptId(newPrompt.id);
+    setActivePromptId(newPrompt.id); // newPrompt.id is string
   };
 
   // Handle deleting a prompt
-  const handleDeletePrompt = (promptId: number, e: React.MouseEvent) => {
+  const handleDeletePrompt = (promptId: string, e: React.MouseEvent) => { // Changed promptId to string
     e.stopPropagation();
     
     if (prompts.length <= 1) {
       alert("Cannot delete the only prompt. Create another prompt first.");
       return;
     }
-    deletePrompt(promptId);
+    deletePrompt(promptId); // deletePrompt expects string
   };
 
   // Handle duplicating the current prompt
@@ -59,16 +61,16 @@ const PromptTabs: React.FC<PromptTabsProps> = ({
       return;
     }
     // The duplicatePrompt function in the context now handles setting the new prompt as active.
-    duplicatePrompt(activePromptId);
+    duplicatePrompt(activePromptId); // activePromptId is string | null, duplicatePrompt expects string
   };
 
   // Handle key presses in prompt name edit input
-  const handleKeyDown = (e: React.KeyboardEvent, promptId: number) => {
+  const handleKeyDown = (e: React.KeyboardEvent, promptId: string) => { // Changed promptId to string
     if (e.key === "Enter") {
       savePromptName(promptId);
     } else if (e.key === "Escape") {
       // Cancel editing
-      startEditingPromptName(0, "");
+      startEditingPromptName("", ""); // Pass empty strings or handle appropriately
     }
   };
 

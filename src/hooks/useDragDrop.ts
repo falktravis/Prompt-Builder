@@ -7,7 +7,7 @@ import { useState, useCallback } from "react";
 import { TreeNode, ComponentType } from "../types";
 
 type DragNodeData = {
-  id: number;
+  id: string;
   type: string;
   name: string;
   content?: string;

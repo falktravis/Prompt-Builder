@@ -1,34 +1,31 @@
+'use client';
+
 /**
  * Sidebar component
  * Contains the tree view of folders and components
  */
 
 import React, { useRef, useState } from "react";
-import { TreeNode } from "../../types";
-import { useTreeContext } from "../../contexts/TreeContext";
+import { TreeNode, FolderType, ComponentType } from "@/types";
+import { useTreeContext } from "@/contexts/TreeContext";
 import TreeView from "./TreeView";
 import FileControls from "./FileControls";
-import SettingsIcon from "@mui/icons-material/Settings";
-import "./Sidebar.scss";
+import "./SideBar.scss";
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
-interface SidebarProps {
-  openSettings: () => void;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ openSettings }) => {
+const Sidebar: React.FC = () => {
   const { 
     treeData, 
     selectedNode, 
     setSelectedNode,
-    expandedFolders,
-    setExpandedFolders,
     setComponentBeingEdited,
     setComponentModalOpen,
     handleAddFolder,
-    handleDeleteNode
+    handleDeleteNode,
+    handleToggleFolderExpand,
   } = useTreeContext();
   
-  const [isAddingFolder, setIsAddingFolder] = useState<number | null>(null);
+  const [isAddingFolder, setIsAddingFolder] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState("");
   const newFolderInputRef = useRef<HTMLInputElement>(null);
   
@@ -40,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ openSettings }) => {
   }, [isAddingFolder]);
 
   // Start adding a new folder
-  const startAddFolder = (folderId: number) => {
+  const startAddFolder = (folderId: string) => {
     setIsAddingFolder(folderId);
     setNewFolderName("");
   };
@@ -67,16 +64,35 @@ const Sidebar: React.FC<SidebarProps> = ({ openSettings }) => {
   };
   
   // Open the component modal for adding a new component
-  const openAddComponentModal = (folderId: number) => {
+  const openAddComponentModal = (folderId: string) => {
     setComponentBeingEdited(null);
-    setSelectedNode({ id: folderId, type: "folder", name: "", children: [] });
+    const parentFolder = treeData.find(f => f.id === folderId) || (treeData[0]?.children.find(c => c.id === folderId && c.type === 'folder') as FolderType);
+    const nodeToSelect: FolderType | null = parentFolder ? parentFolder : (findNodeInTree(treeData, folderId) as FolderType | null) ;
+
+    if (nodeToSelect && nodeToSelect.type === "folder") {
+      setSelectedNode(nodeToSelect);
+    } else {
+      setSelectedNode({ id: folderId, type: "folder", name: "Unknown Folder", children: [], expanded: false });
+    }
     setComponentModalOpen(true);
+  };
+
+  // Helper function to find a node in the tree (can be moved to utils if used elsewhere)
+  const findNodeInTree = (nodes: TreeNode[], id: string): TreeNode | null => {
+    for (const node of nodes) {
+        if (node.id === id) return node;
+        if (node.type === "folder" && node.children) {
+            const found = findNodeInTree(node.children, id);
+            if (found) return found;
+        }
+    }
+    return null;
   };
   
   // Open the component modal for editing an existing component
   const openEditComponentModal = (component: TreeNode) => {
     if (component.type === "component") {
-      setComponentBeingEdited(component);
+      setComponentBeingEdited(component as ComponentType);
       setComponentModalOpen(true);
     }
   };
@@ -84,33 +100,29 @@ const Sidebar: React.FC<SidebarProps> = ({ openSettings }) => {
   return (
     <div id="side-bar">
       <header>
-        <div className="title">
-          <h1>Prompt Builder</h1>
-          <a href="https://docs.google.com/document/d/1eql1d57SB1DtiW8bkQswjnqmxsSl6Ken-96tjSLdG9k/edit?tab=t.0" target="_blank">Guide</a>
-        </div>
-        <div className="header-actions">
-          <button className="settings-btn" onClick={openSettings} title="Settings">
-            <SettingsIcon fontSize="inherit" />
-          </button>
-        </div>
+        <h2>Library</h2>
+        <button
+          className="library-options"
+        >
+          <MoreVertIcon fontSize="inherit"/>
+        </button>
       </header>
       <div className="tree-container">
         <TreeView
           treeData={treeData}
           selectedNode={selectedNode}
           setSelectedNode={setSelectedNode}
-          expandedFolders={expandedFolders}
-          setExpandedFolders={setExpandedFolders}
           isAddingFolder={isAddingFolder}
           newFolderName={newFolderName}
           setNewFolderName={setNewFolderName}
-          newFolderInputRef={newFolderInputRef as React.RefObject<HTMLInputElement>}
+          newFolderInputRef={newFolderInputRef as React.RefObject<HTMLInputElement>} // Corrected type assertion
           handleKeyDown={handleKeyDown}
           submitNewFolder={submitNewFolder}
           startAddFolder={startAddFolder}
           openAddComponentModal={openAddComponentModal}
           openEditComponentModal={openEditComponentModal}
           handleDeleteNode={handleDeleteNode}
+          handleToggleFolderExpand={handleToggleFolderExpand}
         />
       </div>
       <FileControls />
